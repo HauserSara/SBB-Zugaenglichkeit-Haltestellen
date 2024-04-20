@@ -1,5 +1,5 @@
 import pandas as pd
-from functions import get_stop_places, get_route
+from functions import get_stop_places, get_route, get_height_profile
 from pyproj import Transformer
 import json
 import requests
@@ -73,28 +73,56 @@ for route in coords_routes_dest:
     route_lv95 = [(transformer.transform(latitude, longitude)) for longitude, latitude in route]
     routes_dest_lv95.append(route_lv95)
 
-print(routes_dest_lv95)
+# # get the height profiles of the routes
+# routes_start_heights = []
+# routes_dest_heights = []
 
-######################## Function API request height profile ######################
-def get_height_profile(route):
-    geom = {
-        "type": "LineString",
-        "coordinates": route
-    }
+# for route in routes_start_lv95:
+#     profile = get_height_profile(route)
+#     routes_start_heights.append(profile)
+# with open('height_profiles_start.json', 'w') as f:
+#     json.dump(routes_start_heights, f)
+    
+# for route in routes_dest_lv95:
+#     profile = get_height_profile(route)
+#     routes_dest_heights.append(profile)
+# with open('height_profiles_dest.json', 'w') as f:
+#     json.dump(routes_dest_heights, f)
 
-    # Convert the geom dictionary to a JSON string
-    geom_json = json.dumps(geom)
+with open('height_profiles_start.json', 'r') as f:
+    routes_start_heights = json.load(f)
+with open('height_profiles_dest.json', 'r') as f:
+    routes_dest_heights = json.load(f)
 
-    # Include the JSON string in the URL
-    url = f"https://api3.geo.admin.ch/rest/services/profile.json?geom={geom_json}"
-    response = requests.get(url)
+print(routes_start_heights[0][0]['alts']['DTM25'])
 
-    if response.status_code == 200:
-        stop_places = response.json()
-        return stop_places
-    else:
-        print(f"Error: Failed to retrieve data for route {route}")
-        return None
+######################## Function calculate height profile ########################
+def calculate_height_meters(height_profiles):
+    height_meters = []
 
-profile = get_height_profile(routes_dest_lv95[0])
-print(profile)
+    for profile in height_profiles:
+        if profile is None:
+            height_meters.append((None, None))
+            continue
+        upwards = 0
+        downwards = 0
+
+        # Get the heights from the profile
+        heights = [point['alts']['DTM25'] for point in profile]
+        print(heights[0])
+        print('-----------------------------------------')
+
+        # Calculate the differences between consecutive points
+        for i in range(1, len(heights)):
+            diff = heights[i] - heights[i-1]
+            if diff > 0:
+                upwards += diff
+            elif diff < 0:
+                downwards += abs(diff)
+
+        height_meters.append((upwards, downwards))
+
+    return height_meters
+
+start_height_meters = calculate_height_meters(routes_start_heights)
+print(start_height_meters)

@@ -50,3 +50,24 @@ def get_route(X, Y, stop_place, type):
     else:
         print(f"Error: Failed to retrieve data for stop place {stop_place}")
         return None
+    
+######################## Function API request height profile ######################
+def get_height_profile(route):
+    geom = {
+        "type": "LineString",
+        "coordinates": route
+    }
+
+    # Convert the geom dictionary to a JSON string
+    geom_json = json.dumps(geom)
+
+    # Include the JSON string in the URL
+    url = f"https://api3.geo.admin.ch/rest/services/profile.json?geom={geom_json}&sr=2056"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        stop_places = response.json()
+        return stop_places
+    else:
+        print(f"Error: Failed to retrieve data for route {route}")
+        return None
