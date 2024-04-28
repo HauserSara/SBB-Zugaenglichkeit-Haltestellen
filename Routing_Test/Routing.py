@@ -94,7 +94,7 @@ with open('height_profiles_start.json', 'r') as f:
 with open('height_profiles_dest.json', 'r') as f:
     routes_dest_heights = json.load(f)
 
-print(routes_start_heights[0][0]['alts']['DTM25'])
+print(routes_start_heights[0][0])
 
 ######################## Function calculate height profile ########################
 def calculate_height_meters(height_profiles):
@@ -102,15 +102,13 @@ def calculate_height_meters(height_profiles):
 
     for profile in height_profiles:
         if profile is None:
-            height_meters.append((None, None))
+            height_meters.append(None)
             continue
         upwards = 0
         downwards = 0
 
         # Get the heights from the profile
         heights = [point['alts']['DTM25'] for point in profile]
-        print(heights[0])
-        print('-----------------------------------------')
 
         # Calculate the differences between consecutive points
         for i in range(1, len(heights)):
@@ -120,9 +118,12 @@ def calculate_height_meters(height_profiles):
             elif diff < 0:
                 downwards += abs(diff)
 
-        height_meters.append((upwards, downwards))
+        height_meters.append((round(upwards, 1), round(downwards, 1)))
 
     return height_meters
 
 start_height_meters = calculate_height_meters(routes_start_heights)
 print(start_height_meters)
+
+dest_height_meters = calculate_height_meters(routes_dest_heights)
+print(dest_height_meters)
