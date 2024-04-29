@@ -1,8 +1,9 @@
 import pandas as pd
-from functions import get_stop_places, get_route, get_height_profile
+from functions import get_stop_places, get_route, get_height_profile, calculate_height_meters, weight_routes
 from pyproj import Transformer
 import json
 import requests
+import datetime
 
 data = pd.read_csv('Start_Ziel.csv')
 
@@ -94,36 +95,55 @@ with open('height_profiles_start.json', 'r') as f:
 with open('height_profiles_dest.json', 'r') as f:
     routes_dest_heights = json.load(f)
 
-print(routes_start_heights[0][0])
-
-######################## Function calculate height profile ########################
-def calculate_height_meters(height_profiles):
-    height_meters = []
-
-    for profile in height_profiles:
-        if profile is None:
-            height_meters.append(None)
-            continue
-        upwards = 0
-        downwards = 0
-
-        # Get the heights from the profile
-        heights = [point['alts']['DTM25'] for point in profile]
-
-        # Calculate the differences between consecutive points
-        for i in range(1, len(heights)):
-            diff = heights[i] - heights[i-1]
-            if diff > 0:
-                upwards += diff
-            elif diff < 0:
-                downwards += abs(diff)
-
-        height_meters.append((round(upwards, 1), round(downwards, 1)))
-
-    return height_meters
-
 start_height_meters = calculate_height_meters(routes_start_heights)
-print(start_height_meters)
-
 dest_height_meters = calculate_height_meters(routes_dest_heights)
-print(dest_height_meters)
+
+# Weight the start and destination routes
+start_route_weights = weight_routes(start_height_meters)
+dest_route_weights = weight_routes(dest_height_meters)
+
+print(start_route_weights)
+print(dest_route_weights)
+
+# Get the index of the route with the lowest weight
+index_start = start_route_weights[0]
+index_dest = dest_route_weights[0]
+
+# Choose the route with the lowest weight (route coordinates in WGS84)
+route_start = routes_start[index_start]
+route_dest = routes_dest[index_dest]
+
+# Choose starting coordinates, didok number and route coordinates
+coord_start = route_start['features'][1]['geometry']['coordinates']
+number_start = didok_number_start[index_start]
+coords_route_start = coords_routes_start[index_start]
+print(number_start)
+
+# Choose destination coordinates, didok number and route coordinates
+coord_dest = route_dest['features'][2]['geometry']['coordinates']
+number_dest = didok_number_dest[index_dest]
+coords_route_dest = coords_routes_dest[index_dest]
+print(coord_dest)
+
+######################## Function API request ÖV Journey ##########################
+def get_journey(number_start, number_dest, time):
+    params = {
+        "from": number_start,
+        "to": number_dest,
+        "time": time
+    }
+
+    url = "http://transport.opendata.ch/v1/connections"
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        stop_places = response.json()
+        return stop_places
+    else:
+        print(f"Error: Failed to retrieve data for numbers {number_start}, {number_dest}")
+        return None
+    
+current_time = datetime.datetime.now().strftime("%H:%M")
+journey = get_journey(number_start, number_dest, current_time)
+with open('journey.json', 'w') as f:
+    json.dump(journey, f)
