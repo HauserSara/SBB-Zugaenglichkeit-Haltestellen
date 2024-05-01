@@ -56,6 +56,9 @@ def get_route(X, Y, stop_place, type):
         return route
     else:
         print(f"Error: Failed to retrieve route for stop place {stop_place} and coordinates {X}, {Y}")
+        print(f"URL: {response.url}")
+        print(f"Response status code: {response.status_code}")
+        print(f"Response text: {response.text}")
         return None
     
 ######################## Function API request height profile ######################

@@ -25,9 +25,7 @@ didok_number_dest = [entry['number'] for entry in stop_places_dest]
 # get the routes between the coordinates and the stop places
 routes_start = [get_route(X1, Y1, entry, 'start') for entry in didok_number_start]
 routes_dest = [get_route(X2, Y2, entry, 'dest') for entry in didok_number_dest]
-
-with open('error_heightprofile.json', 'w') as f:
-    json.dump({'route_start_5': routes_start[5], 'route_start[6]': routes_start[6], 'route_dest[0]': routes_dest[0]}, f)
+print(routes_dest[3])
 
 # define lists for the coordinates of the routes
 coords_routes_start = []
@@ -41,6 +39,8 @@ for index, feature in enumerate(routes_start):
 for index, feature in enumerate(routes_dest):
     route = feature['features'][0]['geometry']['coordinates']
     coords_routes_dest.append((index, route))
+
+print(coords_routes_dest[3])
 
 # define transformer to convert coordinates from WGS84 to LV95
 transformer = Transformer.from_crs('epsg:4326', 'epsg:2056')
