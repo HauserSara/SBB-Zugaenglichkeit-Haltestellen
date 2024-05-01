@@ -1,0 +1,14 @@
+<sbb-notification type="info" class="api-key-info">
+  This example uses a test API key, that might be disabled at any time.
+</sbb-notification>
+<div class="web-map" (click)="onMapClick($event)">
+  <sbb-journey-maps
+    [apiKey]="apiKey"
+    [interactionOptions]="{ oneFingerPan: true, scrollZoom: true}"
+    language="en"
+    (featuresClick)="onMapClick($event)">
+  </sbb-journey-maps>
+</div>
+<div>
+  <p>Selected coordinates: {{ selectedCoordinates }}</p>
+</div>
