@@ -18,7 +18,6 @@ import { NavigateComponent } from './pages/navigate/navigate.component';
 import { ControlsComponent } from './pages/controls/controls.component';
 
 import { IconSidebarExample } from '../components/icon-sidebar-example/icon-sidebar-example';
-import { JourneyMapsComponent } from '../components/journeymaps.component/journeymaps.component';
 
 const appRoutes: Routes = [
   //set default route
