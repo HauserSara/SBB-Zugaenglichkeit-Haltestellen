@@ -2,7 +2,6 @@ from functions import get_stop_places, get_route, get_height_profile, calculate_
 from pyproj import Transformer
 from fastapi import FastAPI
 from pydantic import BaseModel
-import json
 
 app = FastAPI()
 
@@ -35,8 +34,8 @@ async def create_route(coordinates: Coordinates):
     stop_places_dest = get_stop_places(coordinates.X2, coordinates.Y2)
 
     # get the didok-numbers of the stop places
-    didok_number_start = [entry['number'] for entry in stop_places_start['results']]
-    didok_number_dest = [entry['number'] for entry in stop_places_dest['results']]
+    didok_number_start = [entry['number'] for entry in stop_places_start]
+    didok_number_dest = [entry['number'] for entry in stop_places_dest]
 
     # get the routes between the coordinates and the stop places
     routes_start = [get_route(coordinates.X1, coordinates.Y1, entry, 'start') for entry in didok_number_start]
@@ -81,24 +80,7 @@ async def create_route(coordinates: Coordinates):
     route_start = routes_start[start_route_weights[0]]
     route_dest = routes_dest[dest_route_weights[0]]
 
-    # Choose starting coordinates, didok number and route coordinates
-    coord_start = route_start['features'][1]['geometry']['coordinates']
-    number_start = didok_number_start[start_route_weights[0]]
-    coords_route_start = coords_routes_start[start_route_weights[0]]
-
-    # Choose destination coordinates, didok number and route coordinates
-    coord_dest = route_dest['features'][2]['geometry']['coordinates']
-    number_dest = didok_number_dest[dest_route_weights[0]]
-    coords_route_dest = coords_routes_dest[dest_route_weights[0]]
-
     # Call the get_journey function with the provided time and the calculated numbers
     # journey = get_journey(number_start, number_dest, coordinates.time)
 
-    return json.dumps({
-        "coord_start": coord_start,
-        "number_start": number_start,
-        "coords_route_start": coords_route_start,
-        "coord_dest": coord_dest,
-        "number_dest": number_dest,
-        "coords_route_dest": coords_route_dest
-    })
+    return route_start, route_dest

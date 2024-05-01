@@ -2,10 +2,9 @@ import pandas as pd
 from functions import get_stop_places, get_route, get_height_profile, calculate_height_meters, weight_routes
 from pyproj import Transformer
 import json
-import requests
 import datetime
 
-data = pd.read_csv('Start_Ziel.csv')
+data = pd.read_csv('data/Start_Ziel3.csv')
 
 # starting coordinates
 X1 = data['X'][0]
@@ -15,27 +14,20 @@ Y1 = data['Y'][0]
 X2 = data['X'][1]
 Y2 = data['Y'][1]
 
-# # get stop places within a certain distance of the given coordinates
-# stop_places_start = get_stop_places(X1, Y1)
-# stop_places_dest = get_stop_places(X2, Y2)
-
-with open('stop_places_start.json', 'r') as f:
-    stop_places_start = json.load(f)
-with open('stop_places_dest.json', 'r') as f:
-    stop_places_dest = json.load(f)
+# get stop places within a certain distance of the given coordinates
+stop_places_start = get_stop_places(X1, Y1)
+stop_places_dest = get_stop_places(X2, Y2)
 
 # get the didok-numbers of the stop places
-didok_number_start = [entry['number'] for entry in stop_places_start['results']]
-didok_number_dest = [entry['number'] for entry in stop_places_dest['results']]
+didok_number_start = [entry['number'] for entry in stop_places_start]
+didok_number_dest = [entry['number'] for entry in stop_places_dest]
 
-# # get the routes between the coordinates and the stop places
-# routes_start = [get_route(X1, Y1, entry, 'start') for entry in didok_number_start]
-# routes_dest = [get_route(X2, Y2, entry, 'dest') for entry in didok_number_dest]
+# get the routes between the coordinates and the stop places
+routes_start = [get_route(X1, Y1, entry, 'start') for entry in didok_number_start]
+routes_dest = [get_route(X2, Y2, entry, 'dest') for entry in didok_number_dest]
 
-with open('routes_start.json', 'r') as f:
-    routes_start = json.load(f)
-with open('routes_dest.json', 'r') as f:  
-    routes_dest = json.load(f)
+with open('error_heightprofile.json', 'w') as f:
+    json.dump({'route_start_5': routes_start[5], 'route_start[6]': routes_start[6], 'route_dest[0]': routes_dest[0]}, f)
 
 # define lists for the coordinates of the routes
 coords_routes_start = []
@@ -93,13 +85,11 @@ route_dest = routes_dest[dest_route_weights[0]]
 coord_start = route_start['features'][1]['geometry']['coordinates']
 number_start = didok_number_start[start_route_weights[0]]
 coords_route_start = coords_routes_start[start_route_weights[0]]
-print(number_start)
 
 # Choose destination coordinates, didok number and route coordinates
 coord_dest = route_dest['features'][2]['geometry']['coordinates']
 number_dest = didok_number_dest[dest_route_weights[0]]
 coords_route_dest = coords_routes_dest[dest_route_weights[0]]
-print(coord_dest)
 
 # ######################## Function API request ÖV Journey ##########################
 # def get_journey(number_start, number_dest, time):
@@ -121,5 +111,5 @@ print(coord_dest)
     
 # current_time = datetime.datetime.now().strftime("%H:%M")
 # journey = get_journey(number_start, number_dest, current_time)
-# with open('journey.json', 'w') as f:
+# with open('data/journey.json', 'w') as f:
 #     json.dump(journey, f)

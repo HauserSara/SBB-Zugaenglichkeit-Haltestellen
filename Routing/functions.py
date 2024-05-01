@@ -1,4 +1,6 @@
 import requests
+import http.client
+import urllib.parse
 import json
 
 ######################## Function API request stop places #########################
@@ -9,14 +11,19 @@ def get_stop_places(X, Y, distance=500):
         "limit": 20
     }
 
-    url = "https://data.sbb.ch/api/explore/v2.1/catalog/datasets/haltestelle-haltekante/records"
-    response = requests.get(url, params=params)
+    params_str = urllib.parse.urlencode(params)
 
-    if response.status_code == 200:
-        stop_places = response.json()
-        return stop_places
+    conn = http.client.HTTPSConnection("data.sbb.ch", 443)
+    conn.request("GET", "/api/explore/v2.1/catalog/datasets/haltestelle-haltekante/records?" + params_str)
+
+    response = conn.getresponse()
+
+    if response.status == 200:
+        stop_places = json.loads(response.read())
+        valid_stop_places = [stop_place for stop_place in stop_places['results'] if stop_place['meansoftransport'] is not None]
+        return valid_stop_places
     else:
-        print(f"Error: Failed to retrieve data for coordinates {X}, {Y}")
+        print(f"Error: Failed to retrieve stop places for coordinates {X}, {Y}")
         return None
     
 ######################## Function API request routing #########################
@@ -48,7 +55,7 @@ def get_route(X, Y, stop_place, type):
         route = response.json()
         return route
     else:
-        print(f"Error: Failed to retrieve data for stop place {stop_place}")
+        print(f"Error: Failed to retrieve route for stop place {stop_place} and coordinates {X}, {Y}")
         return None
     
 ######################## Function API request height profile ######################
@@ -62,14 +69,19 @@ def get_height_profile(index, route):
     geom_json = json.dumps(geom)
 
     # Include the JSON string in the URL
-    url = f"https://api3.geo.admin.ch/rest/services/profile.json?geom={geom_json}&sr=2056"
-    response = requests.get(url)
+    data = {"geom": geom_json, "sr": 2056}
+    #url = f"https://api3.geo.admin.ch/rest/services/profile.json?geom={geom_json}&sr=2056"
+    #response = requests.get(url)
+    response = requests.post("https://api3.geo.admin.ch/rest/services/profile.json", data=data)
 
     if response.status_code == 200:
         profile = response.json()
         return profile
     else:
-        print(f"Error: Failed to retrieve data for route {index}")
+        print(f"Error: Failed to retrieve height profile for route {index}")
+        print(f"URL: {response.url}")
+        print(f"Response status code: {response.status_code}")
+        print(f"Response text: {response.text}")
         return None
     
 ######################## Function calculate height meters #########################
