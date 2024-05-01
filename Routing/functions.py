@@ -52,7 +52,7 @@ def get_route(X, Y, stop_place, type):
         return None
     
 ######################## Function API request height profile ######################
-def get_height_profile(route):
+def get_height_profile(index, route):
     geom = {
         "type": "LineString",
         "coordinates": route
@@ -66,19 +66,19 @@ def get_height_profile(route):
     response = requests.get(url)
 
     if response.status_code == 200:
-        stop_places = response.json()
-        return stop_places
+        profile = response.json()
+        return profile
     else:
-        print(f"Error: Failed to retrieve data for route {route}")
+        print(f"Error: Failed to retrieve data for route {index}")
         return None
     
-######################## Function calculate height profile ########################
+######################## Function calculate height meters #########################
 def calculate_height_meters(height_profiles):
     height_meters = []
 
-    for profile in height_profiles:
+    for index, profile in height_profiles:
         if profile is None:
-            height_meters.append(None)
+            height_meters.append((index, None))
             continue
         upwards = 0
         downwards = 0
@@ -94,7 +94,7 @@ def calculate_height_meters(height_profiles):
             elif diff < 0:
                 downwards += abs(diff)
 
-        height_meters.append((round(upwards, 1), round(downwards, 1)))
+        height_meters.append((index, (round(upwards, 1), round(downwards, 1))))
 
     return height_meters
 
@@ -102,13 +102,13 @@ def calculate_height_meters(height_profiles):
 def weight_routes(height_meters, upwards_weight=1, downwards_weight=0.2):
     weighted_routes = []
 
-    for height_meter in height_meters:
+    for index, height_meter in height_meters:
         if height_meter is None:
             weight = None
         else:
             upwards, downwards = height_meter
             weight = upwards * upwards_weight + downwards * downwards_weight
-        weighted_routes.append(weight)
+        weighted_routes.append((index, weight))
 
     # return route with minimal weight, None values are ignored
-    return min(enumerate(weighted_routes), key=lambda x: x[1] if x[1] is not None else float('inf'))
+    return min(weighted_routes, key=lambda x: x[1] if x[1] is not None else float('inf'))
