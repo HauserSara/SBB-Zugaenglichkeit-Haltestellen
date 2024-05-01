@@ -71,3 +71,44 @@ def get_height_profile(route):
     else:
         print(f"Error: Failed to retrieve data for route {route}")
         return None
+    
+######################## Function calculate height profile ########################
+def calculate_height_meters(height_profiles):
+    height_meters = []
+
+    for profile in height_profiles:
+        if profile is None:
+            height_meters.append(None)
+            continue
+        upwards = 0
+        downwards = 0
+
+        # Get the heights from the profile
+        heights = [point['alts']['DTM25'] for point in profile]
+
+        # Calculate the differences between consecutive points
+        for i in range(1, len(heights)):
+            diff = heights[i] - heights[i-1]
+            if diff > 0:
+                upwards += diff
+            elif diff < 0:
+                downwards += abs(diff)
+
+        height_meters.append((round(upwards, 1), round(downwards, 1)))
+
+    return height_meters
+
+######################## Function calculate weight ################################
+def weight_routes(height_meters, upwards_weight=1, downwards_weight=0.2):
+    weighted_routes = []
+
+    for height_meter in height_meters:
+        if height_meter is None:
+            weight = None
+        else:
+            upwards, downwards = height_meter
+            weight = upwards * upwards_weight + downwards * downwards_weight
+        weighted_routes.append(weight)
+
+    # return route with minimal weight, None values are ignored
+    return min(enumerate(weighted_routes), key=lambda x: x[1] if x[1] is not None else float('inf'))
