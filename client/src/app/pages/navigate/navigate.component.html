@@ -1,6 +1,21 @@
-<sbb-datepicker notoggle arrows>
-    <input sbbDateInput />
-</sbb-datepicker>
+<map-test></map-test>
+
+<sbb-form-field label="Datepicker">
+    <sbb-datepicker
+      [arrows]="arrows.value"
+      [toggle]="toggle.value"
+    >
+      <input
+        type="text"
+        sbbDateInput
+        sbbInput
+        [formControl]="date"
+        [readonly]="readonly.value"
+        (dateChange)="dateChangeEvent($event)"
+        (dateInput)="dateInputEvent($event)"
+      />
+    </sbb-datepicker>
+  </sbb-form-field>
 
 <form>
 <sbb-form-field>

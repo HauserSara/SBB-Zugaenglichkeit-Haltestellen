@@ -1,10 +1,7 @@
-import { NgClass } from '@angular/common';
 import { Component } from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SbbCheckboxChange } from '@sbb-esta/angular/checkbox';
-import { SbbCheckboxModule } from '@sbb-esta/angular/checkbox';
-import { SbbFormFieldModule } from '@sbb-esta/angular/form-field';
-import { SbbInputModule } from '@sbb-esta/angular/input';
+import { FormControl } from '@angular/forms';
+import { SbbDateInputEvent } from '@sbb-esta/angular/datepicker';
+
 /**
  * @title Basic Inputs
  * @order 10
@@ -12,14 +9,21 @@ import { SbbInputModule } from '@sbb-esta/angular/input';
 @Component({
   selector: 'app-navigate',
   templateUrl: './navigate.component.html',
-  styleUrl: './navigate.component.css',
-  imports: [
-    SbbFormFieldModule,
-    NgClass,
-    SbbInputModule,
-    FormsModule,
-    ReactiveFormsModule,
-    SbbCheckboxModule,
-  ],
+  styleUrl: './navigate.component.css'
 })
-export class NavigateComponent {}
+export class NavigateComponent {
+  date = new FormControl(new Date());
+  readonly = new FormControl(false);
+  toggle = new FormControl(true);
+  arrows = new FormControl(false);
+  disabled = new FormControl(false);
+
+  dateChangeEvent($event: SbbDateInputEvent<Date>) {
+    console.log('DATE_CHANGED', $event);
+  }
+
+  dateInputEvent($event: SbbDateInputEvent<Date>) {
+    console.log('DATE_INPUT', $event);
+  }
+}
+

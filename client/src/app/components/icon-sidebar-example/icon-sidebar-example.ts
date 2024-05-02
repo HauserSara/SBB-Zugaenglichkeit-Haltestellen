@@ -5,7 +5,7 @@ import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SbbCheckboxModule } from '@sbb-esta/angular/checkbox';
 import { SbbOptionModule } from '@sbb-esta/angular/core';
 import { FakeMediaMatcher } from '@sbb-esta/angular/core/testing';
-import { SbbFormField } from '@sbb-esta/angular/form-field';
+import { SbbFormField, SbbLabel } from '@sbb-esta/angular/form-field';
 import { SbbIconModule } from '@sbb-esta/angular/icon';
 import { SbbSelect } from '@sbb-esta/angular/select';
 import { SbbSidebarModule } from '@sbb-esta/angular/sidebar';
@@ -37,8 +37,8 @@ import { RouterModule } from '@angular/router';
     SbbSelect,
     SbbFormField,
     CommonModule,
-    RouterModule
-
+    RouterModule,
+    SbbLabel
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

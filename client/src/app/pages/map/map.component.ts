@@ -1,7 +1,7 @@
 import { CUSTOM_ELEMENTS_SCHEMA, Component, NO_ERRORS_SCHEMA, NgModule } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SbbNotificationModule } from '@sbb-esta/angular/notification';
-import { SbbJourneyMapsModule, SbbFeaturesClickEventData, SbbFeaturesHoverChangeEventData, SbbFeatureData} from '@sbb-esta/journey-maps';
+import { SbbJourneyMapsModule } from '@sbb-esta/journey-maps';
 
 declare global {
   interface Window {

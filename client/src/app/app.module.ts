@@ -1,5 +1,6 @@
 import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { DatePipe, JsonPipe } from '@angular/common';
 
 import { AppComponent } from './app.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -12,12 +13,19 @@ import { SbbIcon } from '@sbb-esta/angular/icon';
 import { HttpClientModule } from '@angular/common/http';
 import { SBB_SELECT_SCROLL_STRATEGY_PROVIDER } from '@sbb-esta/angular/select';
 import { SbbDatepickerModule } from '@sbb-esta/angular/datepicker';
+import { SbbInputModule } from '@sbb-esta/angular/input';
 
 import { MapComponent } from './pages/map/map.component';
 import { NavigateComponent } from './pages/navigate/navigate.component';
 import { ControlsComponent } from './pages/controls/controls.component';
 
-import { IconSidebarExample } from '../components/icon-sidebar-example/icon-sidebar-example';
+import { IconSidebarExample } from './components/icon-sidebar-example/icon-sidebar-example';
+import { SbbFormField, SbbFormFieldModule } from '@sbb-esta/angular/form-field';
+import { NgClass } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MapTestComponent } from './components/map-test/map-test.component';
+import { ToggleSwitchComponent } from './components/toggle-switch/toggle-switch.component';
+import { ToggleOnOffComponent } from './components/toggle-on-off/toggle-on-off.component';
 
 const appRoutes: Routes = [
   //set default route
@@ -36,7 +44,10 @@ const appRoutes: Routes = [
   declarations: [
     AppComponent,
     ControlsComponent,
-    NavigateComponent
+    NavigateComponent,
+    MapTestComponent,
+    ToggleSwitchComponent,
+    ToggleOnOffComponent
   ],
   imports: [
     BrowserModule,
@@ -50,8 +61,16 @@ const appRoutes: Routes = [
       appRoutes, {enableTracing: true}
     ),
     IconSidebarExample,
-    JourneyMapsComponent,
-    MapComponent
+    MapComponent,
+    SbbFormFieldModule,
+    SbbDatepickerModule,
+    NgClass,
+    SbbInputModule,
+    FormsModule,
+    ReactiveFormsModule,
+    SbbCheckboxModule,
+    JsonPipe,
+    DatePipe,
   ],
   providers: [
     provideAnimationsAsync(),
@@ -61,3 +80,4 @@ const appRoutes: Routes = [
   schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
 })
 export class AppModule { }
+

@@ -1,1 +1,11 @@
-<p>controls works!</p>
+<h3>SETTINGS</h3>
+<div style="display: flex; justify-content: space-between;">
+    <div class="list-element">
+        <sbb-icon svgIcon="low-vision-small" class="sbb-icon-small"></sbb-icon>
+        <toggle-on-off id="accessibility" (change)="onToggleChange($event)"></toggle-on-off>
+    </div>
+    <div class="list-element">
+        <sbb-icon svgIcon="wheelchair-small" class="sbb-icon-small"></sbb-icon>
+        <toggle-on-off id="guidancemarkings" (change)="onToggleChange($event)"></toggle-on-off>
+    </div>
+</div>
