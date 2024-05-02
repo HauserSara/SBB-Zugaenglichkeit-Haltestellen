@@ -1,4 +1,6 @@
 import requests
+import http.client
+import urllib.parse
 import json
 
 ######################## Function API request stop places #########################
@@ -9,14 +11,19 @@ def get_stop_places(X, Y, distance=500):
         "limit": 20
     }
 
-    url = "https://data.sbb.ch/api/explore/v2.1/catalog/datasets/haltestelle-haltekante/records"
-    response = requests.get(url, params=params)
+    params_str = urllib.parse.urlencode(params)
 
-    if response.status_code == 200:
-        stop_places = response.json()
-        return stop_places
+    conn = http.client.HTTPSConnection("data.sbb.ch", 443)
+    conn.request("GET", "/api/explore/v2.1/catalog/datasets/haltestelle-haltekante/records?" + params_str)
+
+    response = conn.getresponse()
+
+    if response.status == 200:
+        stop_places = json.loads(response.read())
+        valid_stop_places = [stop_place for stop_place in stop_places['results'] if stop_place['meansoftransport'] is not None]
+        return valid_stop_places
     else:
-        print(f"Error: Failed to retrieve data for coordinates {X}, {Y}")
+        print(f"Error: Failed to retrieve stop places for coordinates {X}, {Y}")
         return None
     
 ######################## Function API request routing #########################
@@ -48,11 +55,14 @@ def get_route(X, Y, stop_place, type):
         route = response.json()
         return route
     else:
-        print(f"Error: Failed to retrieve data for stop place {stop_place}")
+        print(f"Error: Failed to retrieve route for stop place {stop_place} and coordinates {X}, {Y}")
+        print(f"URL: {response.url}")
+        print(f"Response status code: {response.status_code}")
+        print(f"Response text: {response.text}")
         return None
     
 ######################## Function API request height profile ######################
-def get_height_profile(route):
+def get_height_profile(index, route):
     geom = {
         "type": "LineString",
         "coordinates": route
@@ -62,23 +72,28 @@ def get_height_profile(route):
     geom_json = json.dumps(geom)
 
     # Include the JSON string in the URL
-    url = f"https://api3.geo.admin.ch/rest/services/profile.json?geom={geom_json}&sr=2056"
-    response = requests.get(url)
+    data = {"geom": geom_json, "sr": 2056}
+    #url = f"https://api3.geo.admin.ch/rest/services/profile.json?geom={geom_json}&sr=2056"
+    #response = requests.get(url)
+    response = requests.post("https://api3.geo.admin.ch/rest/services/profile.json", data=data)
 
     if response.status_code == 200:
-        stop_places = response.json()
-        return stop_places
+        profile = response.json()
+        return profile
     else:
-        print(f"Error: Failed to retrieve data for route {route}")
+        print(f"Error: Failed to retrieve height profile for route {index}")
+        print(f"URL: {response.url}")
+        print(f"Response status code: {response.status_code}")
+        print(f"Response text: {response.text}")
         return None
     
-######################## Function calculate height profile ########################
+######################## Function calculate height meters #########################
 def calculate_height_meters(height_profiles):
     height_meters = []
 
-    for profile in height_profiles:
+    for index, profile in height_profiles:
         if profile is None:
-            height_meters.append(None)
+            height_meters.append((index, None))
             continue
         upwards = 0
         downwards = 0
@@ -94,7 +109,7 @@ def calculate_height_meters(height_profiles):
             elif diff < 0:
                 downwards += abs(diff)
 
-        height_meters.append((round(upwards, 1), round(downwards, 1)))
+        height_meters.append((index, (round(upwards, 1), round(downwards, 1))))
 
     return height_meters
 
@@ -102,13 +117,13 @@ def calculate_height_meters(height_profiles):
 def weight_routes(height_meters, upwards_weight=1, downwards_weight=0.2):
     weighted_routes = []
 
-    for height_meter in height_meters:
+    for index, height_meter in height_meters:
         if height_meter is None:
             weight = None
         else:
             upwards, downwards = height_meter
             weight = upwards * upwards_weight + downwards * downwards_weight
-        weighted_routes.append(weight)
+        weighted_routes.append((index, weight))
 
     # return route with minimal weight, None values are ignored
-    return min(enumerate(weighted_routes), key=lambda x: x[1] if x[1] is not None else float('inf'))
+    return min(weighted_routes, key=lambda x: x[1] if x[1] is not None else float('inf'))

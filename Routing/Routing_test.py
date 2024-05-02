@@ -5,7 +5,7 @@ import json
 import requests
 import datetime
 
-data = pd.read_csv('Start_Ziel.csv')
+data = pd.read_csv('data/Start_Ziel.csv')
 
 # starting coordinates
 X1 = data['X'][0]
@@ -23,9 +23,9 @@ Y2 = data['Y'][1]
 # with open('stop_places_dest.json', 'w') as f:
 #     json.dump(stop_places_dest, f)
 
-with open('stop_places_start.json', 'r') as f:
+with open('data/stop_places_start.json', 'r') as f:
     stop_places_start = json.load(f)
-with open('stop_places_dest.json', 'r') as f:
+with open('data/stop_places_dest.json', 'r') as f:
     stop_places_dest = json.load(f)
 
 # get the didok-numbers of the stop places
@@ -40,9 +40,9 @@ didok_number_dest = [entry['number'] for entry in stop_places_dest['results']]
 # with open('routes_dest.json', 'w') as f:
 #     json.dump(routes_dest, f)
 
-with open('routes_start.json', 'r') as f:
+with open('data/routes_start.json', 'r') as f:
     routes_start = json.load(f)
-with open('routes_dest.json', 'r') as f:  
+with open('data/routes_dest.json', 'r') as f:  
     routes_dest = json.load(f)
 
 # define lists for the coordinates of the routes
@@ -90,9 +90,9 @@ for route in coords_routes_dest:
 # with open('height_profiles_dest.json', 'w') as f:
 #     json.dump(routes_dest_heights, f)
 
-with open('height_profiles_start.json', 'r') as f:
+with open('data/height_profiles_start.json', 'r') as f:
     routes_start_heights = json.load(f)
-with open('height_profiles_dest.json', 'r') as f:
+with open('data/height_profiles_dest.json', 'r') as f:
     routes_dest_heights = json.load(f)
 
 start_height_meters = calculate_height_meters(routes_start_heights)
@@ -145,5 +145,5 @@ def get_journey(number_start, number_dest, time):
     
 current_time = datetime.datetime.now().strftime("%H:%M")
 journey = get_journey(number_start, number_dest, current_time)
-with open('journey.json', 'w') as f:
+with open('data/journey.json', 'w') as f:
     json.dump(journey, f)
