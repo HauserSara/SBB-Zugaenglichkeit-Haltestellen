@@ -6,10 +6,10 @@ from pydantic import BaseModel
 app = FastAPI()
 
 class Coordinates(BaseModel):
-    X1: float
-    Y1: float
-    X2: float
-    Y2: float
+    lat1: float
+    lon1: float
+    lat2: float
+    lon2: float
     time: str
 
 # define lists for the coordinates of the routes
@@ -30,16 +30,16 @@ routes_dest_heights = []
 @app.post("/route_journeymaps/")
 async def create_route(coordinates: Coordinates):
     # get stop places within a certain distance of the given coordinates
-    stop_places_start = get_stop_places(coordinates.X1, coordinates.Y1)
-    stop_places_dest = get_stop_places(coordinates.X2, coordinates.Y2)
+    stop_places_start = get_stop_places(coordinates.lat1, coordinates.lon1)
+    stop_places_dest = get_stop_places(coordinates.lat2, coordinates.lon2)
 
     # get the didok-numbers of the stop places
     didok_number_start = [entry['number'] for entry in stop_places_start]
     didok_number_dest = [entry['number'] for entry in stop_places_dest]
 
     # get the routes between the coordinates and the stop places
-    routes_start = [get_route_jm(coordinates.X1, coordinates.Y1, entry, 'start') for entry in didok_number_start]
-    routes_dest = [get_route_jm(coordinates.X2, coordinates.Y2, entry, 'dest') for entry in didok_number_dest]
+    routes_start = [get_route_jm(coordinates.lat1, coordinates.lon1, entry, 'start') for entry in didok_number_start]
+    routes_dest = [get_route_jm(coordinates.lat2, coordinates.lon2, entry, 'dest') for entry in didok_number_dest]
 
     # get the coordinates of the routes
     for index, feature in enumerate(routes_start):
@@ -88,16 +88,16 @@ async def create_route(coordinates: Coordinates):
 @app.post("/route_ojp/")
 async def create_route(coordinates: Coordinates):
     # get stop places within a certain distance of the given coordinates
-    stop_places_start = get_stop_places(coordinates.X1, coordinates.Y1)
-    stop_places_dest = get_stop_places(coordinates.X2, coordinates.Y2)
+    stop_places_start = get_stop_places(coordinates.lat1, coordinates.lon1)
+    stop_places_dest = get_stop_places(coordinates.lat2, coordinates.lon2)
 
     # get the didok-numbers of the stop places
     didok_number_start = [entry['number'] for entry in stop_places_start]
     didok_number_dest = [entry['number'] for entry in stop_places_dest]
 
     # get the routes between the coordinates and the stop places
-    routes_start = [get_route_ojp(coordinates.X1, coordinates.Y1, entry, 'start') for entry in didok_number_start]
-    routes_dest = [get_route_ojp(coordinates.X2, coordinates.Y2, entry, 'dest') for entry in didok_number_dest]
+    routes_start = [get_route_ojp(coordinates.lat1, coordinates.lon1, entry, 'start') for entry in didok_number_start]
+    routes_dest = [get_route_ojp(coordinates.lat2, coordinates.lon2, entry, 'dest') for entry in didok_number_dest]
 
     # get the coordinates of the routes
     for index, feature in enumerate(routes_start):
