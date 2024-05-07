@@ -61,11 +61,6 @@ def get_route_jm(X, Y, stop_place, type):
         print(f"Response text: {response.text}")
         return None
     
-######################## Function OJP API request routing ################
-# get the xml body for the OJP request
-# set parameters based on whether the coordinate is the starting point or the destination
-
-    
 ######################## Function API request height profile ######################
 def get_height_profile(index, route):
     geom = {
