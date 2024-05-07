@@ -25,10 +25,10 @@ def get_stop_places(X, Y, distance=500):
     else:
         print(f"Error: Failed to retrieve stop places for coordinates {X}, {Y}")
         return None
-    
-######################## Function API request routing #########################
+
+######################## Function Journey Maps API request routing ################
 # get the route between a coordinate and a stop place
-def get_route(X, Y, stop_place, type):
+def get_route_jm(X, Y, stop_place, type):
     params = {
         "client": "webshop",
         "clientVersion": "latest",
@@ -60,6 +60,11 @@ def get_route(X, Y, stop_place, type):
         print(f"Response status code: {response.status_code}")
         print(f"Response text: {response.text}")
         return None
+    
+######################## Function OJP API request routing ################
+# get the xml body for the OJP request
+# set parameters based on whether the coordinate is the starting point or the destination
+
     
 ######################## Function API request height profile ######################
 def get_height_profile(index, route):

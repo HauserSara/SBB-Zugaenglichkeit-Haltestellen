@@ -1,5 +1,5 @@
 import pandas as pd
-from functions import get_stop_places, get_route, get_height_profile, calculate_height_meters, weight_routes
+from functions import get_stop_places, get_route_jm, get_height_profile, calculate_height_meters, weight_routes
 from pyproj import Transformer
 import json
 import datetime
@@ -23,8 +23,8 @@ didok_number_start = [entry['number'] for entry in stop_places_start]
 didok_number_dest = [entry['number'] for entry in stop_places_dest]
 
 # get the routes between the coordinates and the stop places
-routes_start = [get_route(X1, Y1, entry, 'start') for entry in didok_number_start]
-routes_dest = [get_route(X2, Y2, entry, 'dest') for entry in didok_number_dest]
+routes_start = [get_route_jm(X1, Y1, entry, 'start') for entry in didok_number_start]
+routes_dest = [get_route_jm(X2, Y2, entry, 'dest') for entry in didok_number_dest]
 print(routes_dest[3])
 
 # define lists for the coordinates of the routes
