@@ -107,7 +107,7 @@ export class MapNav implements OnInit, OnDestroy {
       }
     }).subscribe({
       next: (geojsonData) => this.displayGeoJSON(geojsonData),
-      error: (error) => console.error("POST call in error", error),
+      error: (error) => console.error("POST call in error", error.error),
       complete: () => console.log("The POST observable is now completed.")
     });
   }

@@ -4,7 +4,7 @@ from pyproj import Transformer
 import json
 import datetime
 
-data = pd.read_csv('data/Start_Ziel3.csv')
+data = pd.read_csv('Routing/data/Start_Ziel.csv')
 
 # starting coordinates
 X1 = data['X'][0]
@@ -25,7 +25,6 @@ didok_number_dest = [entry['number'] for entry in stop_places_dest]
 # get the routes between the coordinates and the stop places
 routes_start = [get_route_jm(X1, Y1, entry, 'start') for entry in didok_number_start]
 routes_dest = [get_route_jm(X2, Y2, entry, 'dest') for entry in didok_number_dest]
-print(routes_dest[3])
 
 # define lists for the coordinates of the routes
 coords_routes_start = []
@@ -39,8 +38,6 @@ for index, feature in enumerate(routes_start):
 for index, feature in enumerate(routes_dest):
     route = feature['features'][0]['geometry']['coordinates']
     coords_routes_dest.append((index, route))
-
-print(coords_routes_dest[3])
 
 # define transformer to convert coordinates from WGS84 to LV95
 transformer = Transformer.from_crs('epsg:4326', 'epsg:2056')
@@ -90,6 +87,8 @@ coords_route_start = coords_routes_start[start_route_weights[0]]
 coord_dest = route_dest['features'][2]['geometry']['coordinates']
 number_dest = didok_number_dest[dest_route_weights[0]]
 coords_route_dest = coords_routes_dest[dest_route_weights[0]]
+
+print(number_start, number_dest)
 
 # ######################## Function API request ÖV Journey ##########################
 # def get_journey(number_start, number_dest, time):
