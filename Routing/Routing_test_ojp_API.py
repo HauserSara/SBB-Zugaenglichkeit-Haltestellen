@@ -10,23 +10,27 @@ import folium
 data = pd.read_csv('data/Start_Ziel.csv')
 
 # starting coordinates
-X1 = data['X'][0]
-Y1 = data['Y'][0]
+lat1 = data['X'][0]
+lon1 = data['Y'][0]
 
 # destination coordinates
-X2 = data['X'][1]
-Y2 = data['Y'][1]
+lat2 = data['X'][1]
+lon2 = data['Y'][1]
 
 # get stop places within a certain distance of the given coordinates
-stop_places_start = get_stop_places(X1, Y1)
-stop_places_dest = get_stop_places(X2, Y2)
+stop_places_start = get_stop_places(lat1, lon1)
+stop_places_dest = get_stop_places(lat2, lon2)
 
 # get the didok-numbers of the stop places
-didok_number_start = [entry['number'] for entry in stop_places_start]
+didok_number_start = [(entry['number'], entry['designationofficial']) for entry in stop_places_start]
 didok_number_dest = [(entry['number'], entry['designationofficial']) for entry in stop_places_dest]
 print(didok_number_dest)
 
-# OJP request
+################################## OJP request ##################################
+# define lists for the coordinates of the routes
+coords_routes_start = []
+coords_routes_dest = []
+
 url = "https://api.opentransportdata.swiss/ojp2020"
 
 headers = {
@@ -34,103 +38,102 @@ headers = {
     "Authorization": "Bearer eyJvcmciOiI2NDA2NTFhNTIyZmEwNTAwMDEyOWJiZTEiLCJpZCI6Ijc4MDlhMzhlOWUyMzQzODM4YmJjNWIwNjQxN2Y0NTk3IiwiaCI6Im11cm11cjEyOCJ9"
 }
 
-body = f"""
-<siri:OJP xmlns="http://www.vdv.de/ojp" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.vdv.de/ojp" version="1.0">
-    <siri:OJPRequest>
-        <siri:ServiceRequest>
-            <siri:RequestTimestamp>2024-05-04T17:35:43.773Z</siri:RequestTimestamp>
-            <siri:RequestorRef>Routing_test</siri:RequestorRef>
-            <OJPTripRequest>
+for start in didok_number_start:
+    body = f"""
+    <siri:OJP xmlns="http://www.vdv.de/ojp" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.vdv.de/ojp" version="1.0">
+        <siri:OJPRequest>
+            <siri:ServiceRequest>
                 <siri:RequestTimestamp>2024-05-04T17:35:43.773Z</siri:RequestTimestamp>
-                <Origin>
-                    <PlaceRef>
-                        <StopPlaceRef>{didok_number_dest[0][0]}</StopPlaceRef>
-                        <LocationName>
-                            <Text>{didok_number_dest[0][1]}</Text>
-                        </LocationName>
-                    </PlaceRef>
-                    <DepArrTime>2024-05-04T15:56:37.323Z</DepArrTime>
-                    <IndividualTransportOptions>
-                        <Mode>walk</Mode>
-                        <MaxDuration>PT3000M</MaxDuration>
-                    </IndividualTransportOptions>
-                </Origin>
-                <Destination>
-                    <PlaceRef>
-                        <GeoPosition>
-                            <siri:Longitude>{X2}</siri:Longitude>
-                            <siri:Latitude>{Y2}</siri:Latitude>
-                        </GeoPosition>
-                        <LocationName>
-                            <Text>{Y2}, {X2}</Text>
-                        </LocationName>
-                    </PlaceRef>
-                </Destination>
-                <Params>
-                    <NumberOfResultsAfter>5</NumberOfResultsAfter>
-                    <NumberOfResultsBefore>0</NumberOfResultsBefore>
-                    <IncludeTrackSections>true</IncludeTrackSections>
-                    <IncludeLegProjection>true</IncludeLegProjection>
-                    <IncludeTurnDescription>true</IncludeTurnDescription>
-                    <IncludeIntermediateStops>true</IncludeIntermediateStops>
-                    <ItModesToCover>walk</ItModesToCover>
-                </Params>
-            </OJPTripRequest>
-        </siri:ServiceRequest>
-    </siri:OJPRequest>
-</siri:OJP>
-"""
+                <siri:RequestorRef>Routing_test</siri:RequestorRef>
+                <OJPTripRequest>
+                    <siri:RequestTimestamp>2024-05-04T17:35:43.773Z</siri:RequestTimestamp>
+                    <Origin>
+                        <PlaceRef>
+                            <StopPlaceRef>{start[0]}</StopPlaceRef>
+                            <LocationName>
+                                <Text>{start[0]}</Text>
+                            </LocationName>
+                        </PlaceRef>
+                        <DepArrTime>2024-05-04T15:56:37.323Z</DepArrTime>
+                        <IndividualTransportOptions>
+                            <Mode>walk</Mode>
+                            <MaxDuration>PT3000M</MaxDuration>
+                        </IndividualTransportOptions>
+                    </Origin>
+                    <Destination>
+                        <PlaceRef>
+                            <GeoPosition>
+                                <siri:Longitude>{lat1}</siri:Longitude>
+                                <siri:Latitude>{lon1}</siri:Latitude>
+                            </GeoPosition>
+                            <LocationName>
+                                <Text>{lat1}, {lon1}</Text>
+                            </LocationName>
+                        </PlaceRef>
+                    </Destination>
+                    <Params>
+                        <NumberOfResultsAfter>5</NumberOfResultsAfter>
+                        <NumberOfResultsBefore>0</NumberOfResultsBefore>
+                        <IncludeTrackSections>true</IncludeTrackSections>
+                        <IncludeLegProjection>true</IncludeLegProjection>
+                        <IncludeTurnDescription>true</IncludeTurnDescription>
+                        <IncludeIntermediateStops>false</IncludeIntermediateStops>
+                        <ItModesToCover>walk</ItModesToCover>
+                    </Params>
+                </OJPTripRequest>
+            </siri:ServiceRequest>
+        </siri:OJPRequest>
+    </siri:OJP>
+    """
 
-response = requests.post(url, headers=headers, data=body)
+    response = requests.post(url, headers=headers, data=body)
 
-print("Status code:", response.status_code)
-#print("Response body:", response.text)
+    print("Status code:", response.status_code)
 
-with open('output.xml', 'w') as f:
-    f.write(response.text)
+    # write response to xml
+    with open('output.xml', 'w') as f:
+        f.write(response.text)
 
-root = ET.fromstring(response.text)
-coordinates = []
-for link_projection in root.iter('{http://www.vdv.de/ojp}LinkProjection'):
-    for position in link_projection.iter('{http://www.vdv.de/ojp}Position'):
-        longitude = position.find('{http://www.siri.org.uk/siri}Longitude').text
-        latitude = position.find('{http://www.siri.org.uk/siri}Latitude').text
-        coordinates.append([float(latitude), float(longitude)])
+    # generate json with coordinates
+    root = ET.fromstring(response.text)
+    for link_projection in root.iter('{http://www.vdv.de/ojp}LinkProjection'):
+        for position in link_projection.iter('{http://www.vdv.de/ojp}Position'):
+            longitude = position.find('{http://www.siri.org.uk/siri}Longitude').text
+            latitude = position.find('{http://www.siri.org.uk/siri}Latitude').text
+            coords_routes_start.append([float(latitude), float(longitude)])
+    print(coords_routes_start)
+    print("-------------------")
 
-data = {
-    "coordinates": coordinates
-}
+# # Write the data to a JSON file
+# with open('coordinates.json', 'w') as file:
+#     json.dump(data, file)
 
-# Write the data to a JSON file
-with open('coordinates.json', 'w') as file:
-    json.dump(data, file)
+# ################################## Map ##################################
 
-# Load the coordinates from the JSON file
-with open('coordinates.json', 'r') as file:
-    data = json.load(file)
-coordinates = data['coordinates']
-coordinates_line1 = coordinates[:-1]
-coordinates_line2 = coordinates[-2:]
+# # Load the coordinates from the JSON file
+# with open('coordinates.json', 'r') as file:
+#     data = json.load(file)
+# coordinates = data['coordinates']
+# coordinates_line1 = coordinates[:-1]
+# coordinates_line2 = coordinates[-2:]
 
-# Create a map centered at the first coordinate
-m = folium.Map(location=[float(coordinates[0][0]), float(coordinates[0][1])], zoom_start=14)
+# # Create a map centered at the first coordinate
+# m = folium.Map(location=[float(coordinates[0][0]), float(coordinates[0][1])], zoom_start=14)
 
-# Add the first line (from the first to the second-to-last point)
-folium.PolyLine(coordinates_line1, color="red", weight=2.5, opacity=1).add_to(m)
+# # Add the first line (from the first to the second-to-last point)
+# folium.PolyLine(coordinates_line1, color="red", weight=2.5, opacity=1).add_to(m)
 
-# Add the second line (from the second-to-last to the last point)
-folium.PolyLine(coordinates_line2, color="red", weight=2.5, opacity=1).add_to(m)
+# # Add the second line (from the second-to-last to the last point)
+# folium.PolyLine(coordinates_line2, color="red", weight=2.5, opacity=1).add_to(m)
 
-# Save the map to an HTML file
-m.save('map.html')
+# # Save the map to an HTML file
+# m.save('map.html')
+
+#########################################################################
 
 # # get the routes between the coordinates and the stop places
-# routes_start = [get_route_ojp(X1, Y1, entry, 'start') for entry in didok_number_start]
-# routes_dest = [get_route_ojp(X2, Y2, entry, 'dest') for entry in didok_number_dest]
-
-# # define lists for the coordinates of the routes
-# coords_routes_start = []
-# coords_routes_dest = []
+# routes_start = [get_route_ojp(lat1, lon1, entry, 'start') for entry in didok_number_start]
+# routes_dest = [get_route_ojp(lat2, lon2, entry, 'dest') for entry in didok_number_dest]
 
 # # get the coordinates of the routes
 # for index, feature in enumerate(routes_start):
