@@ -23,9 +23,10 @@ import { IconSidebarExample } from './components/icon-sidebar-example/icon-sideb
 import { SbbFormField, SbbFormFieldModule } from '@sbb-esta/angular/form-field';
 import { NgClass } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MapTestComponent } from './components/map-test/map-test.component';
+import { MapMain } from './components/map-main/map-main.component';
 import { ToggleSwitchComponent } from './components/toggle-switch/toggle-switch.component';
 import { ToggleOnOffComponent } from './components/toggle-on-off/toggle-on-off.component';
+import { MapNav } from './components/map-nav/map-nav.component';
 
 const appRoutes: Routes = [
   //set default route
@@ -39,15 +40,16 @@ const appRoutes: Routes = [
   { path: 'controls', component: ControlsComponent }
 ];
 
-
 @NgModule({
   declarations: [
     AppComponent,
     ControlsComponent,
     NavigateComponent,
-    MapTestComponent,
+    MapMain,
+    MapNav,
     ToggleSwitchComponent,
-    ToggleOnOffComponent
+    ToggleOnOffComponent,
+    MapComponent
   ],
   imports: [
     BrowserModule,
@@ -58,10 +60,12 @@ const appRoutes: Routes = [
     HttpClientModule,
     SbbDatepickerModule,
     RouterModule.forRoot(
-      appRoutes, {enableTracing: true}
+      appRoutes, {
+        //enableTracing: true,
+        onSameUrlNavigation: 'reload'
+      }
     ),
     IconSidebarExample,
-    MapComponent,
     SbbFormFieldModule,
     SbbDatepickerModule,
     NgClass,
@@ -79,5 +83,7 @@ const appRoutes: Routes = [
   bootstrap: [AppComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
 })
-export class AppModule { }
+export class AppModule {
+  
+}
 

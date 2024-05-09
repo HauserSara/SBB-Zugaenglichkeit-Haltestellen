@@ -1,7 +1,7 @@
 #map {
     position: relative; /* Allows absolute positioning inside */
   }
-  
+
 .toggle-switch {
     position: absolute;
     right: 10px;

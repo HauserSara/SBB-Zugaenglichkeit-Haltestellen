@@ -51,8 +51,6 @@ export class IconSidebarExample implements AfterViewInit, OnDestroy {
   constructor(private breakpointObserver: BreakpointObserver) {}
 
 
-//   constructor(private _mediaMatcher: FakeMediaMatcher) {}
-
   ngAfterViewInit(): void {
     this.breakpointObserver.observe([
       Breakpoints.Handset, // Überwacht Änderungen in der Fensterbreite für mobile Geräte
@@ -68,11 +66,6 @@ export class IconSidebarExample implements AfterViewInit, OnDestroy {
     });
   }
 
-//   ngAfterViewInit(): void {
-//     this.simulateMobile.valueChanges
-//       .pipe(startWith(this.simulateMobile.value), takeUntil(this._destroyed))
-//       .subscribe((matches) => this._mediaMatcher.setMatchesQuery(Breakpoints.Mobile, matches));
-//   }
 
   ngOnDestroy(): void {
     this._destroyed.next();

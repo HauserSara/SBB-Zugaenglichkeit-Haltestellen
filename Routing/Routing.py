@@ -1,9 +1,22 @@
-from functions import get_stop_places, get_route_jm, get_route_ojp, get_height_profile, calculate_height_meters, weight_routes
+from functions import get_stop_places, get_route_jm, get_height_profile, calculate_height_meters, weight_routes
 from pyproj import Transformer
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:4200",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class Coordinates(BaseModel):
     lat1: float
