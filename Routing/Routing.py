@@ -62,7 +62,8 @@ async def create_route(coordinates: Coordinates):
     for index, feature in enumerate(routes_dest):
         route = feature['features'][0]['geometry']['coordinates']
         coords_routes_dest.append((index, route))
-
+    print(coords_routes_start)
+    print(coords_routes_dest)
     # convert the coordinates of the routes to LV95
     for index, route in coords_routes_start:
         route_lv95 = [(transformer.transform(latitude, longitude)) for longitude, latitude in route]

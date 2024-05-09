@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Map , Marker, LngLat, GeoJSONSource} from 'maplibre-gl';
 import { HttpClient } from '@angular/common/http';
 
@@ -11,21 +11,12 @@ declare global {
   templateUrl: './map-nav.component.html',
   styleUrl: './map-nav.component.css'
 })
-export class MapNav implements OnInit, OnDestroy, AfterViewInit {
+export class MapNav implements OnInit, OnDestroy {
   apiKey = window.JM_API_KEY;
   private map!: Map;
   public markers: Marker[] = [];
   
   constructor(private http:HttpClient) { }
-
-  ngAfterViewInit(): void {
-         this.map = new Map({
-      container: 'map', // container ID
-      style: `https://journey-maps-tiles.geocdn.sbb.ch/styles/base_bright_v2/style.json?api_key=${this.apiKey}`, // your MapTiler style URL
-      center: [8.2275, 46.8182], // starting position [lng, lat]
-      zoom: 7.5 // starting zoom
-    });
-  }
 
   ngOnInit(): void {
     this.initMap();
@@ -39,6 +30,13 @@ export class MapNav implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private initMap(): void {
+    this.map = new Map({
+      container: 'map', // container ID
+      style: `https://journey-maps-tiles.geocdn.sbb.ch/styles/base_bright_v2/style.json?api_key=${this.apiKey}`, // your MapTiler style URL
+      center: [8.2275, 46.8182], // starting position [lng, lat]
+      zoom: 7.5 // starting zoom
+    });
+
     this.map.on('load', () => {
       this.map.on('click', (e) => {
         this.handleMapClick(e.lngLat);
@@ -69,6 +67,27 @@ export class MapNav implements OnInit, OnDestroy, AfterViewInit {
     const marker = new Marker({ element: el }).setLngLat(lngLat).addTo(this.map);
     this.markers.push(marker);
   }
+
+  //nur für testzwecke kann nacher gelöscht werden
+  sendagain(): void {
+    this.http.post<any>('http://127.0.0.1:8000/route_journeymaps/', {
+      "lat1": this.markers[0].getLngLat().lng,
+      "lon1": this.markers[0].getLngLat().lat,
+      "lat2": this.markers[1].getLngLat().lng,
+      "lon2": this.markers[1].getLngLat().lat,
+      "time": "12:00"
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'sbb-a11y-app'
+      }
+    }).subscribe({
+      next: (geojsonData) => this.displayGeoJSON(geojsonData),
+      error: (error) => console.error("POST call in error", error),
+      complete: () => console.log("The POST observable is now completed.")
+    });
+  }
+
 
   getRoute(): void {
     if (this.markers.length < 2) {
@@ -139,8 +158,7 @@ clearRoutes(): void {
   });
 }
 
-
-clearMarkers(): void {
+  clearMarkers(): void {
     this.markers.forEach(marker => marker.remove());
     this.markers = [];
     this.clearRoutes();
