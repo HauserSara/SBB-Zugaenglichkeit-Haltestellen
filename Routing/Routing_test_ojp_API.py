@@ -6,8 +6,9 @@ import datetime
 import requests
 import xml.etree.ElementTree as ET
 import folium
+import time
 
-data = pd.read_csv('data/Start_Ziel.csv')
+data = pd.read_csv('data/Start_Ziel2.csv')
 
 # starting coordinates
 lat1 = data['X'][0]
@@ -85,23 +86,27 @@ for start in didok_number_start:
         </siri:OJPRequest>
     </siri:OJP>
     """
-
+    start = time.time()
     response = requests.post(url, headers=headers, data=body)
-
+    end = time.time()
+    print(f"Time request: {time.time() - start} seconds")
     print("Status code:", response.status_code)
 
-    # write response to xml
-    with open('output.xml', 'w') as f:
-        f.write(response.text)
+    # # write response to xml
+    # with open('output.xml', 'w') as f:
+    #     f.write(response.text)
 
     # generate json with coordinates
+    start = time.time()
     root = ET.fromstring(response.text)
     for link_projection in root.iter('{http://www.vdv.de/ojp}LinkProjection'):
         for position in link_projection.iter('{http://www.vdv.de/ojp}Position'):
             longitude = position.find('{http://www.siri.org.uk/siri}Longitude').text
             latitude = position.find('{http://www.siri.org.uk/siri}Latitude').text
             coords_routes_start.append([float(latitude), float(longitude)])
+    end = time.time()
     print(coords_routes_start)
+    print(f"Time parsing: {time.time() - start} seconds")
     print("-------------------")
 
 # # Write the data to a JSON file
