@@ -64,7 +64,7 @@ export class MapNav implements OnInit, OnDestroy {
     el.style.height = '60px';
     el.style.backgroundSize = 'cover';
 
-    const marker = new Marker({ element: el }).setLngLat(lngLat).addTo(this.map);
+    const marker = new Marker({ element: el, anchor: 'bottom' }).setLngLat(lngLat).addTo(this.map);
     this.markers.push(marker);
   }
 
