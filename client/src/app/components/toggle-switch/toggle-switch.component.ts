@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'toggle-switch',
@@ -6,5 +6,10 @@ import { Component } from '@angular/core';
   styleUrls: ['./toggle-switch.component.css']
 })
 export class ToggleSwitchComponent {
+  @Output() toggleChanged = new EventEmitter<boolean>();
   isChecked = false;
+
+  onToggleChange(): void {
+    this.toggleChanged.emit(this.isChecked);
+  }
 }
