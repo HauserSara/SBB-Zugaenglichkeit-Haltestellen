@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import time
+import requests
 
 app = FastAPI()
 
@@ -58,10 +59,31 @@ async def create_route(coordinates: Coordinates):
     # print("========================================")
 
     # get the routes between the coordinates and the stop places
+    # start_time = time.time()
+    # routes_start = [get_route_jm(coordinates.lat1, coordinates.lon1, entry, 'start') for entry in didok_number_start]
+    # print(f"Time taken for get_route start: {time.time() - start_time} seconds")
+    # start_time = time.time()
+    # routes_dest = [get_route_jm(coordinates.lat2, coordinates.lon2, entry, 'dest') for entry in didok_number_dest]
+    # print(f"Time taken for get_route dest: {time.time() - start_time} seconds")
+
     start_time = time.time()
-    routes_start = [get_route_jm(coordinates.lat1, coordinates.lon1, entry, 'start') for entry in didok_number_start]
-    routes_dest = [get_route_jm(coordinates.lat2, coordinates.lon2, entry, 'dest') for entry in didok_number_dest]
-    print(f"Time taken for get_route: {time.time() - start_time} seconds")
+    routes_start = []
+    for entry in didok_number_start:
+        routes_start.append(get_route_jm(coordinates.lat1, coordinates.lon1, entry, 'start'))
+        print(f"Time taken for get_route start: {time.time() - start_time} seconds")
+
+    start_time = time.time()
+    routes_dest = []
+    for entry in didok_number_dest:
+        routes_dest.append(get_route_jm(coordinates.lat2, coordinates.lon2, entry, 'dest'))
+        print(f"Time taken for get_route dest: {time.time() - start_time} seconds")
+
+        # try:
+        #     routes_dest.append(get_route_jm(coordinates.lat2, coordinates.lon2, entry, 'dest'))
+        #     print(f"Time taken for get_route dest: {time.time() - start_time} seconds")
+        # except requests.exceptions.RequestException:
+        #     print(f"Failed to get route for dest entry: {entry}. Skipping...")
+        #     continue
     # TESTZWECKE
     # print("ROUTES")
     # print(len(routes_start))
@@ -79,9 +101,12 @@ async def create_route(coordinates: Coordinates):
     start_time = time.time()
     for index, feature in enumerate(routes_start):
         route = feature['features'][0]['geometry']['coordinates']
+        distance = feature['features'][1]['properties']['distanceInMeter']
+        feature['distance'] = distance
         #print(route)
         #print('----- TEST ------')
-        coords_routes_start.append((index, route))
+        coords_routes_start.append((index, route, distance))
+    print(coords_routes_start[0])
     # TESTZWECKE
     # print("COORDS")
     # print(len(coords_routes_start))
@@ -90,8 +115,10 @@ async def create_route(coordinates: Coordinates):
 
     for index, feature in enumerate(routes_dest):
         route = feature['features'][0]['geometry']['coordinates']
-        coords_routes_dest.append((index, route))
+        distance = feature['features'][1]['properties']['distanceInMeter']
+        coords_routes_dest.append((index, route, distance))
     print(f"Time taken for getting coordinates: {time.time() - start_time} seconds")
+    print(coords_routes_dest[0])
     # TESTZWECKE
     # print(len(coords_routes_dest))
     # print(coords_routes_dest[0])
@@ -103,13 +130,13 @@ async def create_route(coordinates: Coordinates):
 
     # convert the coordinates of the routes to LV95
     start_time = time.time()
-    for index, route in coords_routes_start:
+    for index, route, distance in coords_routes_start:
         route_lv95 = [(transformer.transform(latitude, longitude)) for longitude, latitude in route]
-        routes_start_lv95.append((index, route_lv95))
+        routes_start_lv95.append((index, route_lv95, distance))
 
-    for index, route in coords_routes_dest:
+    for index, route, distance in coords_routes_dest:
         route_lv95 = [(transformer.transform(latitude, longitude)) for longitude, latitude in route]
-        routes_dest_lv95.append((index, route_lv95))
+        routes_dest_lv95.append((index, route_lv95, distance))
     print(f"Time taken for transforming coordinates: {time.time() - start_time} seconds")
 
     # define lists for the height profiles of the routes
@@ -117,8 +144,8 @@ async def create_route(coordinates: Coordinates):
     routes_dest_heights = []
     # get the height profiles of the routes
     start_time = time.time()
-    for index, route in routes_start_lv95:
-        profile = get_height_profile(index, route)
+    for index, route, distance in routes_start_lv95:
+        profile = get_height_profile(index, route, distance)
         routes_start_heights.append((index, profile))
     # TESTZWECKE
     # print("PROFILES")
@@ -127,10 +154,11 @@ async def create_route(coordinates: Coordinates):
     #     print(index, profile[:2])
     # print('----------------------------------------')
         
-    for index, route in routes_dest_lv95:
-        profile = get_height_profile(index, route)
+    for index, route, distance in routes_dest_lv95:
+        profile = get_height_profile(index, route, distance)
         routes_dest_heights.append((index, profile))
     print(f"Time taken for get_height_profile: {time.time() - start_time} seconds")
+    print(routes_dest_heights[0])
     # TESTZWECKE
     # print(len(routes_dest_heights))
     # for index, profile in routes_dest_heights[:2]:

@@ -99,23 +99,45 @@ export class MapNav implements OnInit, OnDestroy {
       return; // Ensure there are exactly two markers
     }
 
-    this.http.post<any>('http://127.0.0.1:8000/route_journeymaps/', {
-      "lat1": this.markers[0].getLngLat().lng,
-      "lon1": this.markers[0].getLngLat().lat,
-      "lat2": this.markers[1].getLngLat().lng,
-      "lon2": this.markers[1].getLngLat().lat,
-      "time": "12:00"
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'sbb-a11y-app'
-      }
-    }).subscribe({
-      next: (geojsonData) => this.displayGeoJSON(geojsonData),
-      error: (error) => console.error("POST call in error", error.error),
-      complete: () => console.log("The POST observable is now completed.")
-    });
-  }
+  //   this.http.post<any>('http://127.0.0.1:8000/route_journeymaps/', {
+  //     "lat1": this.markers[0].getLngLat().lng,
+  //     "lon1": this.markers[0].getLngLat().lat,
+  //     "lat2": this.markers[1].getLngLat().lng,
+  //     "lon2": this.markers[1].getLngLat().lat,
+  //     "time": "12:00"
+  //   }, {
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'User-Agent': 'sbb-a11y-app'
+  //     }
+  //   }).subscribe({
+  //     next: (geojsonData) => this.displayGeoJSON(geojsonData),
+  //     error: (error) => console.error("POST call in error", error.error),
+  //     complete: () => console.log("The POST observable is now completed.")
+  //   });
+  // }
+
+  const url = 'http://127.0.0.1:8000/route_journeymaps/';
+  const body = {
+    "lat1": this.markers[0].getLngLat().lng,
+    "lon1": this.markers[0].getLngLat().lat,
+    "lat2": this.markers[1].getLngLat().lng,
+    "lon2": this.markers[1].getLngLat().lat,
+    "time": "12:00"
+  };
+  const headers = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'sbb-a11y-app'
+  };
+
+  console.log(`Sending POST request to ${url} with body:`, body);
+
+  this.http.post<any>(url, body, { headers }).subscribe({
+    next: (geojsonData) => this.displayGeoJSON(geojsonData),
+    error: (error) => console.error("POST call in error", error.error),
+    complete: () => console.log("The POST observable is now completed.")
+  });
+}
 
   displayGeoJSON(geoJSONData: any[]) {
     const layerColor = '#FF0000'; // Definiere eine konstante Farbe für alle Schichten
