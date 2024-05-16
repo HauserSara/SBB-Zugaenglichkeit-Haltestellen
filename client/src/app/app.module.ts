@@ -27,6 +27,7 @@ import { MapMain } from './components/map-main/map-main.component';
 import { ToggleSwitchComponent } from './components/toggle-switch/toggle-switch.component';
 import { ToggleOnOffComponent } from './components/toggle-on-off/toggle-on-off.component';
 import { MapNav } from './components/map-nav/map-nav.component';
+import { OAuthModule } from 'angular-oauth2-oidc';
 
 const appRoutes: Routes = [
   //set default route
@@ -59,6 +60,7 @@ const appRoutes: Routes = [
     SbbIcon,
     HttpClientModule,
     SbbDatepickerModule,
+    OAuthModule.forRoot(),
     RouterModule.forRoot(
       appRoutes, {
         //enableTracing: true,

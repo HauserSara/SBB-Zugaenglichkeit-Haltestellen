@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import time
 import requests
+from typing import List
+import pandas as pd
 
 app = FastAPI()
 
@@ -201,3 +203,22 @@ async def create_route(coordinates: Coordinates):
     # journey = get_journey(number_start, number_dest, coordinates.time)
 
     return route_start, route_dest
+
+@app.get("/check-sloid/{sloid}")
+async def check_sloid(sloid: str):
+    # Prüfen, ob der Wert in den Spalten EL_SLOID oder RP_SLOID vorhanden ist
+    filter_el = df['EL_SLOID'] == sloid
+    filter_rp = df['RP_SLOID'] == sloid
+    if filter_el.any() or filter_rp.any():
+        # Extrahiere alle relevanten SLOIDs
+        el_sloids = df.loc[filter_el, 'EL_SLOID'].tolist()
+        rp_sloids = df.loc[filter_rp, 'RP_SLOID'].tolist()
+        # Vereinige die Listen und entferne Duplikate
+        combined_sloids = list(set(el_sloids + rp_sloids))
+        return {"sloid": sloid, "connected_sloids": combined_sloids}
+    else:
+        raise HTTPException(status_code=404, detail=f"SLOID '{sloid}' not found")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -18,15 +18,14 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
   apiKey = window.JM_API_KEY;
   private map!: Map;
   isChecked: boolean = false;
+  private validSLOIDValues: string[] = []; 
 
   constructor() { }
 
-  ngOnInit(): void {
-  }
+  ngOnInit() {}
 
   ngAfterViewInit(): void {
     this.initializeMap();
-    this.updateMode();
   }
 
   onToggleChange(isChecked: boolean): void {
@@ -44,13 +43,15 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
 
   setupInformationMode(): void {
     console.log('Information mode activated');
+    this.removeAllLayers();
     this.addGeoJsonLayer();
   }
 
   setupConnectionMode(): void {
     console.log('Connection mode activated');
     this.removeAllLayers();
-  }
+    this.addAllPointsLayer();  // Fügt den gefilterten Layer hinzu
+  }  
 
   ngOnDestroy(): void {
     if (this.map) {
@@ -81,6 +82,7 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
       });
 
       this.initializeSource();
+      this.setupInformationMode();
     });
   }
 
@@ -89,27 +91,49 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
       'prm_toilets': 'assets/geojson/prm_toilets.geojson',
       'prm_parking_lots': 'assets/geojson/prm_parking_lots.geojson',
       'prm_info_desks': 'assets/geojson/prm_info_desks.geojson',
-      'prm_ticket_counters': 'assets/geojson/prm_ticket_counters.geojson'
+      'prm_ticket_counters': 'assets/geojson/prm_ticket_counters.geojson',
+      'all_points': 'assets/geojson/all_points.geojson' // Hinzufügen der neuen Quelle
     };
+  
+    Promise.all(
+      Object.entries(sources).map(([key, url]) =>
+        fetch(url)
+          .then(res => {
+            if (!res.ok) throw new Error(`Network response was not ok for ${key}`);
+            return res.json();
+          })
+          .then(data => {
+            if (!this.map.getSource(key)) {
+              this.map.addSource(key, {
+                type: 'geojson',
+                data: data
+              });
+            }
+          })
+      )
+    ).then(() => {
+      this.setupInformationMode(); // Dies wird aufgerufen, wenn alle Quellen geladen sind
+    }).catch(error => console.error("Error loading the GeoJSON: ", error));
+  }  
 
-    Object.entries(sources).forEach(([key, url]) => {
-      fetch(url)
-        .then(res => {
-          if (!res.ok) throw new Error(`Network response was not ok for ${key}`);
-          return res.json();
-        })
-        .then(data => {
-          if (!this.map.getSource(key)) {
-            this.map.addSource(key, {
-              type: 'geojson',
-              data: data
-            });
-          }
-        })
-        .catch(error => console.error(`Error loading the GeoJSON for ${key}: `, error));
-    });
+  private addAllPointsLayer(): void {
+    if (!this.map.getLayer('all_points-layer') && this.map.getSource('all_points')) {
+      this.map.addLayer({
+        id: 'all_points-layer',
+        type: 'circle',
+        source: 'all_points',
+        paint: {
+          'circle-radius': 5,
+          'circle-color': '#FF0000'  // Roter Kreis als Markierung
+        }
+      });
+  
+      // Klickevent für Punkte, um Filter basierend auf SLOID zu setzen
+      this.setupClickHandlerForFilter();
+    }
   }
-
+  
+  
   private addGeoJsonLayer(): void {
     const layers: { [id: string]: { source: string, icon: string, properties: LayerProperties } } = {
       'prm_toilets-layer': { 
@@ -151,14 +175,52 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
       }
     });
   }
+
+  private setupClickHandlerForFilter(): void {
+    this.map.on('click', 'all_points-layer', (e) => {
+      // Sicherstellen, dass Features vorhanden und nicht leer sind
+      if (e.features && e.features.length > 0) {
+        const clickedSLOID = e.features[0].properties['SLOID']; // Korrigierter Zugriff auf SLOID
+        // Setze Filter nur für diesen SLOID
+        this.validSLOIDValues = [clickedSLOID];
+
+        // api service call to get the related SLOIDs
+        
+        //this.map.setFilter('all_points-layer', ['in', ['get', 'SLOID'], ['literal', this.validSLOIDValues]]);
+
+      }
+    });
+  }
+  
+  public resetFilter(): void {
+    if (this.map.getLayer('all_points-layer')) {
+      this.map.setFilter('all_points-layer', null);  // Entfernt den Filter
+    }
+  }  
+
+  public updateSLOIDFilter(newValues: string[]): void {
+    this.validSLOIDValues = newValues;
+    if (this.map.getLayer('all_points-layer')) {
+      this.map.setFilter('all_points-layer', ['in', ['get', 'SLOID'], ['literal', this.validSLOIDValues]]);
+    }
+  }
+
   private setupLayerClickHandler(layerId: string, propertiesToShow: { [key: string]: 'boolean' | 'text' }): void {
     this.map.on('click', layerId, (e) => {
       if (e.features && e.features.length > 0) {
         const feature = e.features[0];
         if (feature.geometry.type === 'Point' && feature.geometry.coordinates.length === 2) {
+          // Hier wird der Wert von 'Bezeichnung' überprüft
+          const designation = feature.properties['Bezeichnung'];  // Nehmen Sie an, dass 'Bezeichnung' der richtige Schlüssel ist
+          if (designation === 'Referenzpunkt') {
+            console.log("Ja");
+          } else {
+            console.log("Nein");
+          }
+
           const coordinates: [number, number] = [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
           let popupContent = '<div style="font-size: 12px;">';
-  
+
           Object.entries(propertiesToShow).forEach(([prop, type]) => {
             let propValue = feature.properties[prop];
             let translatedProp = this.attributeTranslations[prop] || prop; // Verwendung der deutschen Übersetzung
@@ -167,9 +229,9 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
             }
             popupContent += `<strong>${translatedProp}:</strong> ${propValue}<br>`;
           });
-  
+
           popupContent += '</div>';
-  
+
           new Popup()
             .setLngLat(coordinates)
             .setHTML(popupContent)
@@ -178,9 +240,10 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
       }
     });
   }
+
   
   private removeAllLayers(): void {
-    const layerIds = ['prm_toilets-layer', 'prm_parking_lots-layer', 'prm_info_desks-layer', 'prm_ticket_counters-layer'];
+    const layerIds = ['prm_toilets-layer', 'prm_parking_lots-layer', 'prm_info_desks-layer', 'prm_ticket_counters-layer', 'all_points-layer'];
     layerIds.forEach(layerId => {
       if (this.map.getLayer(layerId)) {
         this.map.removeLayer(layerId);
