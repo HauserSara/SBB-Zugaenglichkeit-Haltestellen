@@ -101,12 +101,14 @@ async def create_route(coordinates: Coordinates):
     start_time = time.time()
     for index, feature in enumerate(routes_start):
         route = feature['features'][0]['geometry']['coordinates']
-        distance = feature['features'][1]['properties']['distanceInMeter']
-        feature['distance'] = distance
+        if 'distanceInMeter' not in feature['features'][1]['properties']:
+            print(f"Index_start: {index}, Properties: {feature['features'][1]['properties']}")
+        else:
+            distance = feature['features'][1]['properties']['distanceInMeter']
         #print(route)
         #print('----- TEST ------')
-        coords_routes_start.append((index, route, distance))
-    print(coords_routes_start[0])
+            coords_routes_start.append((index, route, distance))
+    print(coords_routes_start[0][0])
     # TESTZWECKE
     # print("COORDS")
     # print(len(coords_routes_start))
@@ -115,10 +117,14 @@ async def create_route(coordinates: Coordinates):
 
     for index, feature in enumerate(routes_dest):
         route = feature['features'][0]['geometry']['coordinates']
-        distance = feature['features'][1]['properties']['distanceInMeter']
-        coords_routes_dest.append((index, route, distance))
-    print(f"Time taken for getting coordinates: {time.time() - start_time} seconds")
+        print(len(route))
+        if 'distanceInMeter' not in feature['features'][1]['properties']:
+            print(f"Index_dest: {index}, Properties: {feature['features'][1]['properties']}")
+        else:
+            distance = feature['features'][1]['properties']['distanceInMeter']
+            coords_routes_dest.append((index, route, distance))
     print(coords_routes_dest[0])
+    print(f"Time taken for getting coordinates: {time.time() - start_time} seconds")
     # TESTZWECKE
     # print(len(coords_routes_dest))
     # print(coords_routes_dest[0])
@@ -136,6 +142,7 @@ async def create_route(coordinates: Coordinates):
 
     for index, route, distance in coords_routes_dest:
         route_lv95 = [(transformer.transform(latitude, longitude)) for longitude, latitude in route]
+        print(len(route_lv95))
         routes_dest_lv95.append((index, route_lv95, distance))
     print(f"Time taken for transforming coordinates: {time.time() - start_time} seconds")
 
@@ -157,8 +164,11 @@ async def create_route(coordinates: Coordinates):
     for index, route, distance in routes_dest_lv95:
         profile = get_height_profile(index, route, distance)
         routes_dest_heights.append((index, profile))
+        print(f'distance WGS84: {distance}')
+        print(f'distance LV95: {profile[-1]["dist"]}')
+        print(profile)
     print(f"Time taken for get_height_profile: {time.time() - start_time} seconds")
-    print(routes_dest_heights[0])
+    #print(routes_dest_heights[0])
     # TESTZWECKE
     # print(len(routes_dest_heights))
     # for index, profile in routes_dest_heights[:2]:

@@ -41,6 +41,7 @@ def get_route_jm(lat, lon, stop_place, type):
         'client': 'webshop',
         'clientVersion': 'latest',
         'lang': 'de',
+        'accessible': 'true',
         'api_key': '59b20b25750f56bf888ef149873f24da'
     }
 
@@ -89,13 +90,14 @@ def get_height_profile(index, route, distance):
         nb_points = int(distance)
 
     # Include the JSON string in the URL
-    data = {'geom': geom_json, 'sr': 2056, 'nb_points': nb_points}
-    #url = f'https://api3.geo.admin.ch/rest/services/profile.json?geom={geom_json}&sr=2056'
-    #response = requests.get(url)
+    #data = {'geom': geom_json, 'sr': 2056, 'nb_points': nb_points}
+    data = {'geom': geom_json, 'sr': 2056}
     response = requests.post('https://api3.geo.admin.ch/rest/services/profile.json', data=data)
 
     if response.status_code == 200:
         profile = response.json()
+        # with open(f'data/route_{index}_profile.geojson', 'w') as f:
+        #     json.dump(profile, f)
         return profile
     else:
         print(f'Error: Failed to retrieve height profile for route {index}')
@@ -129,6 +131,7 @@ def calculate_height_meters(height_profiles):
 
         # Get the heights from the profile
         heights = [point['alts']['DTM25'] for point in profile]
+        # print(len(heights))
 
         # Calculate the differences between consecutive points
         for i in range(1, len(heights)):
