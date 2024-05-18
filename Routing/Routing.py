@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import time
-import requests
+import pandas as pd
 
 app = FastAPI()
 
@@ -32,8 +32,6 @@ transformer = Transformer.from_crs('epsg:4326', 'epsg:2056')
 
 @app.post("/route_journeymaps/")
 async def create_route(coordinates: Coordinates):
-    # nur für testzwecke
-    print(coordinates)
     
     # get stop places within a certain distance of the given coordinates
     start_time = time.time()
@@ -211,3 +209,34 @@ async def create_route(coordinates: Coordinates):
     # journey = get_journey(number_start, number_dest, coordinates.time)
 
     return route_start, route_dest
+
+df = pd.read_csv('./prm_connections.csv', sep=';', encoding='utf-8')
+
+@app.get("/check-sloid/{sloid}")
+async def check_sloid(sloid: str):
+    matched_rows = df[(df['EL_SLOID'] == sloid) | (df['RP_SLOID'] == sloid)]
+    if not matched_rows.empty:
+        all_el_sloids = matched_rows['EL_SLOID'].tolist()
+        all_rp_sloids = matched_rows['RP_SLOID'].tolist()
+        combined_sloids = list(set(all_el_sloids + all_rp_sloids))
+
+        connections = []
+        access_translation = {0: "Zu vervollständigen", 1: "Ja", 2: "Nein", 3: "Nich anwendbar",
+                            4: "Teilweise", 5: "Ja mit Lift", 6: "Ja mit Rampe", 7: "Mit Fernbedienung"}
+
+        # Erstelle Verbindungsinformationen
+        for _, row in matched_rows.iterrows():
+            info = f"Stufenfreier Zugang: {access_translation[row['STEP_FREE_ACCESS']]}, " \
+                f"Taktil-visuelle Markierungen: {access_translation[row['TACT_VISUAL_MARKS']]}, " \
+                f"Kontrastreiche Markierungen: {access_translation[row['CONTRASTING_AREAS']]}"
+
+            connection = {
+                "start": row['EL_SLOID'],
+                "end": row['RP_SLOID'],
+                "info": info
+            }
+            connections.append(connection)
+
+        return {"sloids": combined_sloids, "connections": connections}
+    else:
+        raise HTTPException(status_code=404, detail=f"SLOID '{sloid}' not found")

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { Map , Marker, LngLat, GeoJSONSource} from 'maplibre-gl';
 import { HttpClient } from '@angular/common/http';
 
@@ -17,6 +17,7 @@ export class MapNav implements OnInit, OnDestroy {
   public markers: Marker[] = [];
   
   constructor(private http:HttpClient) { }
+  
 
   ngOnInit(): void {
     this.initMap();
@@ -30,6 +31,10 @@ export class MapNav implements OnInit, OnDestroy {
   }
 
   private initMap(): void {
+    if (this.map) {
+      this.map.remove();  // Clean up the existing map before creating a new one
+    }
+
     this.map = new Map({
       container: 'map', // container ID
       style: `https://journey-maps-tiles.geocdn.sbb.ch/styles/base_bright_v2/style.json?api_key=${this.apiKey}`, // your MapTiler style URL
@@ -173,11 +178,14 @@ export class MapNav implements OnInit, OnDestroy {
   }
 
 clearRoutes(): void {
-  this.map.getStyle().layers?.forEach(layer => {
-    if (layer.id.includes('route-layer-')) {
-      this.map.removeLayer(layer.id)
+    if (this.map && this.map.getStyle()) {
+        this.map.getStyle().layers.forEach(layer => {
+            // Only attempt to remove the layer if it actually exists
+            if (this.map.getLayer(layer.id)) {
+                this.map.removeLayer(layer.id);
+            }
+        });
     }
-  });
 }
 
   clearMarkers(): void {
