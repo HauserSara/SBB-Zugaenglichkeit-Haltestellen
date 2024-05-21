@@ -59,7 +59,7 @@ def get_route_jm(lat, lon, stop_place, type):
     url = 'https://journey-maps.api.sbb.ch/v1/transfer'
     response = session.get(url, params=params)
 
-    print("Final request URL: ", response.url)
+    #print("Final request URL: ", response.url)
 
     try:
         response.raise_for_status()
@@ -73,7 +73,7 @@ def get_route_jm(lat, lon, stop_place, type):
         raise HTTPException(status_code=400, detail=str(message))
     return route
 
-# ======================================= Function API request height profile ==================================== #
+# ======================================= Function API request height profile JM ==================================== #
 def get_height_profile(index, route, distance):
     geom = {
         'type': 'LineString',
@@ -101,6 +101,33 @@ def get_height_profile(index, route, distance):
         return profile
     else:
         print(f'Error: Failed to retrieve height profile for route {index}')
+        print(f'URL: {response.url}')
+        print(f'Response status code: {response.status_code}')
+        print(f'Response text: {response.text}')
+        return None
+    
+# ======================================= Function API request height profile OJP ==================================== #
+def get_height_profile(result_id, leg_id, route):
+    geom = {
+        'type': 'LineString',
+        'coordinates': route,
+    }
+
+    # Convert the geom dictionary to a JSON string
+    geom_json = json.dumps(geom)
+
+    # Include the JSON string in the URL
+    #data = {'geom': geom_json, 'sr': 2056, 'nb_points': nb_points}
+    data = {'geom': geom_json, 'sr': 2056}
+    response = requests.post('https://api3.geo.admin.ch/rest/services/profile.json', data=data)
+
+    if response.status_code == 200:
+        profile = response.json()
+        # with open(f'data/route_{index}_profile.geojson', 'w') as f:
+        #     json.dump(profile, f)
+        return profile
+    else:
+        print(f'Error: Failed to retrieve height profile for route {result_id}, {leg_id}')
         print(f'URL: {response.url}')
         print(f'Response status code: {response.status_code}')
         print(f'Response text: {response.text}')

@@ -69,6 +69,7 @@ async def create_route(coordinates: Coordinates):
     for entry in didok_number_start:
         routes_start.append(get_route_jm(coordinates.lat1, coordinates.lon1, entry, 'start'))
         print(f"Time taken for get_route start: {time.time() - start_time} seconds")
+    print(routes_start)
 
     start_time = time.time()
     routes_dest = []
@@ -106,7 +107,7 @@ async def create_route(coordinates: Coordinates):
         #print(route)
         #print('----- TEST ------')
             coords_routes_start.append((index, route, distance))
-    print(coords_routes_start[0][0])
+    #print(coords_routes_start[0][0])
     # TESTZWECKE
     # print("COORDS")
     # print(len(coords_routes_start))
@@ -115,14 +116,15 @@ async def create_route(coordinates: Coordinates):
 
     for index, feature in enumerate(routes_dest):
         route = feature['features'][0]['geometry']['coordinates']
-        print(len(route))
+        #print(len(route))
         if 'distanceInMeter' not in feature['features'][1]['properties']:
             print(f"Index_dest: {index}, Properties: {feature['features'][1]['properties']}")
         else:
             distance = feature['features'][1]['properties']['distanceInMeter']
             coords_routes_dest.append((index, route, distance))
-    print(coords_routes_dest[0])
+    #print(coords_routes_dest[0])
     print(f"Time taken for getting coordinates: {time.time() - start_time} seconds")
+
     # TESTZWECKE
     # print(len(coords_routes_dest))
     # print(coords_routes_dest[0])
@@ -140,10 +142,11 @@ async def create_route(coordinates: Coordinates):
 
     for index, route, distance in coords_routes_dest:
         route_lv95 = [(transformer.transform(latitude, longitude)) for longitude, latitude in route]
-        print(len(route_lv95))
+        #print(len(route_lv95))
         routes_dest_lv95.append((index, route_lv95, distance))
     print(f"Time taken for transforming coordinates: {time.time() - start_time} seconds")
 
+    print(routes_dest_lv95[0])
     # define lists for the height profiles of the routes
     routes_start_heights = []
     routes_dest_heights = []
@@ -162,9 +165,7 @@ async def create_route(coordinates: Coordinates):
     for index, route, distance in routes_dest_lv95:
         profile = get_height_profile(index, route, distance)
         routes_dest_heights.append((index, profile))
-        print(f'distance WGS84: {distance}')
-        print(f'distance LV95: {profile[-1]["dist"]}')
-        print(profile)
+        #print(profile)
     print(f"Time taken for get_height_profile: {time.time() - start_time} seconds")
     #print(routes_dest_heights[0])
     # TESTZWECKE
@@ -172,6 +173,7 @@ async def create_route(coordinates: Coordinates):
     # for index, profile in routes_dest_heights[:2]:
     #     print(index, profile[:2])
     # print("========================================")
+    print(routes_dest_heights[0])
 
     # Calculate the heightmeters of the routes
     start_time = time.time()
