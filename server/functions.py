@@ -4,6 +4,7 @@ import urllib.parse
 import json
 from fastapi import HTTPException
 import math
+import xml.etree.ElementTree as ET
 
 # ======================================= Function API request stop places ======================================= # 
 # get stop places within a certain distance of the given coordinates
@@ -73,7 +74,110 @@ def get_route_jm(lat, lon, stop_place, type):
         raise HTTPException(status_code=400, detail=str(message))
     return route
 
-# ======================================= Function API request height profile JM ==================================== #
+# ======================================= Function OJP request routing =========================================== #
+def get_routes_ojp(lon1, lat1, lon2, lat2):
+    url = "https://api.opentransportdata.swiss/ojp2020"
+
+    headers = {
+        "Content-Type": "application/xml",
+        "Authorization": "Bearer eyJvcmciOiI2NDA2NTFhNTIyZmEwNTAwMDEyOWJiZTEiLCJpZCI6Ijc4MDlhMzhlOWUyMzQzODM4YmJjNWIwNjQxN2Y0NTk3IiwiaCI6Im11cm11cjEyOCJ9"
+    }
+
+    body = f"""
+    <?xml version="1.0" encoding="utf-8"?>
+    <OJP xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.siri.org.uk/siri" version="1.0" xmlns:ojp="http://www.vdv.de/ojp" xsi:schemaLocation="http://www.siri.org.uk/siri ../ojp-xsd-v1.0/OJP.xsd">
+        <OJPRequest>
+            <ServiceRequest>
+                <RequestTimestamp>2024-05-20T12:00:10.154Z</RequestTimestamp>
+                <RequestorRef>API-Explorer</RequestorRef>
+                <ojp:OJPTripRequest>
+                    <RequestTimestamp>2024-05-20T12:00:10.154Z</RequestTimestamp>
+                    <ojp:Origin>
+                        <ojp:PlaceRef>
+                            <ojp:GeoPosition>
+                                <Longitude>{lon1}</Longitude>
+                                <Latitude>{lat1}</Latitude>
+                            </ojp:GeoPosition>
+                            <ojp:LocationName>
+                                <ojp:Text>Kasparstrasse</ojp:Text>
+                            </ojp:LocationName>
+                        </ojp:PlaceRef>
+                        <ojp:DepArrTime>2024-05-20T11:57:19</ojp:DepArrTime>
+                        <ojp:IndividualTransportOptions>
+                            <ojp:Mode>walk</ojp:Mode>
+                            <ojp:MaxDistance>1000</ojp:MaxDistance>
+                        </ojp:IndividualTransportOptions>
+                    </ojp:Origin>
+                    <ojp:Destination>
+                        <ojp:PlaceRef>
+                            <ojp:GeoPosition>
+                                <Longitude>{lon2}</Longitude>
+                                <Latitude>{lat2}</Latitude>
+                            </ojp:GeoPosition>
+                            <ojp:LocationName>
+                                <obj:Text>Dornhaldestrasse</obj:Text>
+                            </ojp:LocationName>
+                        </ojp:PlaceRef>
+                        <ojp:IndividualTransportOptions>
+                            <ojp:Mode>walk</ojp:Mode>
+                            <ojp:MaxDistance>1000</ojp:MaxDistance>
+                        </ojp:IndividualTransportOptions>
+                    </ojp:Destination>
+                    <ojp:Params>
+                        <ojp:IncludeTrackSections>true</ojp:IncludeTrackSections>
+                        <ojp:IncludeLegProjection>true</ojp:IncludeLegProjection>
+                        <ojp:IncludeTurnDescription>true</ojp:IncludeTurnDescription>
+                        <ojp:IncludeIntermediateStops>false</ojp:IncludeIntermediateStops>
+                    </ojp:Params>
+                </ojp:OJPTripRequest>
+            </ServiceRequest>
+        </OJPRequest>
+    </OJP>
+    """
+
+    response = requests.post(url, headers=headers, data=body)
+
+    # ADD ERROR HANDLING
+    # ...
+
+    print("Status code:", response.status_code)
+
+    # write response to xml
+    with open('output.xml', 'w') as f:
+        f.write(response.text)
+    # Parse the response text as XML
+    root = ET.fromstring(response.text)
+
+    return root
+
+# ======================================= Handle Trip Leg for accessing coordinates (OJP) ========================= #
+def handle_leg(trip_leg, leg_type):
+    coordinates = []
+    for link_projection in trip_leg.iter('{http://www.vdv.de/ojp}LinkProjection'):
+        for position in link_projection.iter('{http://www.vdv.de/ojp}Position'):
+            longitude = float(position.find('{http://www.siri.org.uk/siri}Longitude').text)
+            latitude = float(position.find('{http://www.siri.org.uk/siri}Latitude').text)
+            coordinates.append([latitude, longitude])
+    return {'type': leg_type, 'coordinates': coordinates}
+
+# ======================================= Function OJP convert coordinates (WGS84 to LV95) ======================= #
+def transform_coordinates(result_leg_ids_wgs84, transformer):
+
+    result_leg_ids_lv95 = {}
+    for result_id, legs in result_leg_ids_wgs84.items():
+        leg_ids_lv95 = {}
+        for leg_id, leg_info in legs.items():
+            coordinates_lv95 = []
+            for latitude, longitude in leg_info['coordinates']:
+                # Transform the coordinates to LV95
+                lv95_Y, lv95_X = transformer.transform(latitude, longitude)
+                coordinates_lv95.append([round(lv95_Y, 1), round(lv95_X, 1)])
+            leg_ids_lv95[leg_id] = {'type': leg_info['type'], 'coordinates': coordinates_lv95}
+        result_leg_ids_lv95[result_id] = leg_ids_lv95
+
+    return result_leg_ids_lv95
+
+# ======================================= Function API request height profile Journey Maps ==================================== #
 def get_height_profile(index, route, distance):
     geom = {
         'type': 'LineString',
