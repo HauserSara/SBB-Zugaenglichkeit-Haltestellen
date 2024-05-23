@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
-import { Map , Marker, LngLat, GeoJSONSource} from 'maplibre-gl';
+import { Map , Marker, LngLat, GeoJSONSource, AttributionControl} from 'maplibre-gl';
 import { HttpClient } from '@angular/common/http';
 
 declare global {
@@ -39,7 +39,8 @@ export class MapNav implements OnInit, OnDestroy {
       container: 'map', // container ID
       style: `https://journey-maps-tiles.geocdn.sbb.ch/styles/base_bright_v2/style.json?api_key=${this.apiKey}`, // your MapTiler style URL
       center: [8.2275, 46.8182], // starting position [lng, lat]
-      zoom: 7.5 // starting zoom
+      zoom: 7.5, // starting zoom
+      attributionControl: false
     });
 
     this.map.on('load', () => {
@@ -47,6 +48,12 @@ export class MapNav implements OnInit, OnDestroy {
         this.handleMapClick(e.lngLat);
       });
     });
+
+    const attributionControl = new AttributionControl({
+      compact: true
+    });
+    this.map.addControl(attributionControl, 'top-left');
+
   }
 
   private handleMapClick(lngLat: LngLat): void {

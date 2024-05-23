@@ -1,7 +1,8 @@
 /* Stil für die Überschrift */
-h3 {
+h1 {
     text-align: center; /* Zentriert die Überschrift */
     margin-top: 20px;
+    padding-bottom: 20px;
 }
 
 /* Container-Stil */

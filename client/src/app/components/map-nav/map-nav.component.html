@@ -1,7 +1,6 @@
-<div id="map" style="height: 70vh; position: relative;">
-  </div>
-  <button (click)="clearMarkers()">Alle Marker löschen</button>
-  <button (click)="sendagain">nochmals senden</button>
+<div id="map" style="height: 100vh;"></div>
+<button (click)="clearMarkers()">Alle Marker löschen</button>
+<button (click)="sendagain">nochmals senden</button>
   <!-- <ul *ngIf="markers.length > 0">
     <li *ngFor="let marker of markers">
       Marker: {{ marker.getLngLat().lng.toFixed(3) }}, {{ marker.getLngLat().lat.toFixed(3) }}
