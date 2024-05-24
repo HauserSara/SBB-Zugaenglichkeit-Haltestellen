@@ -36,7 +36,7 @@ for trip_result in routes.iter('{http://www.vdv.de/ojp}TripResult'):
         elif trip_leg.find('{http://www.vdv.de/ojp}TransferLeg') is not None:
             leg_ids[leg_id] = handle_leg(trip_leg, 'TransferLeg')
         elif trip_leg.find('{http://www.vdv.de/ojp}TimedLeg') is not None:
-            leg_ids[leg_id] = {'type': 'TimedLeg', 'coordinates': []}
+            leg_ids[leg_id] = handle_leg(trip_leg, 'TimedLeg')
     result_leg_ids[result_id] = leg_ids
 
 print(result_leg_ids)
@@ -53,6 +53,9 @@ profiles = {}
 
 for result_id, legs in result_leg_ids_lv95.items():
     for leg_id, leg_info in legs.items():
+        # Ignore the leg if it's a Public Transport Leg
+        if leg_info['type'] == 'TimedLeg':
+            continue
         route = leg_info['coordinates']
         # Ignore the entry if coordinates are empty or route has only two points
         if len(route) > 2:
