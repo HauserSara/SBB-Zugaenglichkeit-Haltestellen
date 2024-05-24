@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import maplibregl, { Map, Marker, LngLat, GeoJSONSource, AttributionControl } from 'maplibre-gl';
 import { HttpClient } from '@angular/common/http';
 import { Feature, Geometry } from 'geojson';
@@ -12,7 +12,7 @@ declare global {
   templateUrl: './map-nav.component.html',
   styleUrls: ['./map-nav.component.css']
 })
-export class MapNav implements OnInit, OnDestroy {
+export class MapNav implements OnInit, OnDestroy, AfterViewInit {
   apiKey = window.JM_API_KEY;
   private map!: Map;
   public markers: Marker[] = [];
@@ -20,7 +20,12 @@ export class MapNav implements OnInit, OnDestroy {
   constructor(private http: HttpClient) { }
   
   ngOnInit(): void {
-    this.initMap();
+    
+  }
+
+  ngAfterViewInit(): void {
+    this.initializeMap();
+    this.map.resize()
   }
 
   ngOnDestroy(): void {
@@ -30,13 +35,13 @@ export class MapNav implements OnInit, OnDestroy {
     this.clearMarkers();
   }
 
-  private initMap(): void {
+  private initializeMap(): void {
     if (this.map) {
       this.map.remove();  // Clean up the existing map before creating a new one
     }
 
     this.map = new Map({
-      container: 'map', // container ID
+      container: 'map-nav', // container ID
       style: `https://journey-maps-tiles.geocdn.sbb.ch/styles/base_bright_v2/style.json?api_key=${this.apiKey}`, // your MapTiler style URL
       center: [8.2275, 46.8182], // starting position [lng, lat]
       zoom: 7.5, // starting zoom
