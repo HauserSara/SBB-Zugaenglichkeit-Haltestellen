@@ -1,7 +1,8 @@
 import { Component, OnDestroy, AfterViewInit, OnInit } from '@angular/core';
-import { Map, Popup, GeoJSONSource } from 'maplibre-gl';
+import { Map, Popup, GeoJSONSource, AttributionControl } from 'maplibre-gl';
 import { SloidService } from '../../services/sloid.service';
 import { Feature, Point, GeoJsonProperties } from 'geojson'; // Import necessary GeoJSON types
+import { Control } from 'mapbox-gl';
 
 declare global {
   interface Window { JM_API_KEY: string; }
@@ -88,8 +89,14 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
       container: 'map',
       style: `https://journey-maps-tiles.geocdn.sbb.ch/styles/base_bright_v2/style.json?api_key=${this.apiKey}`,
       center: [7.56, 46.85],
-      zoom: 10
+      zoom: 10,
+      attributionControl: false
     });
+    
+  const attributionControl = new AttributionControl({
+    compact: true
+  });
+  this.map.addControl(attributionControl, 'top-left');
 
     this.map.on('load', () => {
       const icons = {
@@ -414,4 +421,5 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
     'WHEELCHAIR_ACCESS': 'Rollstuhlzugang',
     'DESCRIPTION': 'Beschreibung'
   };
+  
 }

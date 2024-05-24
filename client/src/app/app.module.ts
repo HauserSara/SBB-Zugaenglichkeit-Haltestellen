@@ -46,11 +46,11 @@ const appRoutes: Routes = [
     AppComponent,
     ControlsComponent,
     NavigateComponent,
-    MapMain,
     MapNav,
     ToggleSwitchComponent,
     ToggleOnOffComponent,
-    MapComponent
+    MapComponent,
+    MapMain
   ],
   imports: [
     BrowserModule,
@@ -76,7 +76,7 @@ const appRoutes: Routes = [
     ReactiveFormsModule,
     SbbCheckboxModule,
     JsonPipe,
-    DatePipe,
+    DatePipe
   ],
   providers: [
     provideAnimationsAsync(),
