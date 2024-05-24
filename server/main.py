@@ -33,7 +33,6 @@ transformer = Transformer.from_crs('epsg:4326', 'epsg:2056')
 
 @app.post("/route_journeymaps/")
 async def create_route_jm(coordinates: Coordinates):
-    print(coordinates)
     start_request = time.time()
     # get stop places within a certain distance of the given coordinates
     start_time = time.time()
@@ -218,7 +217,6 @@ async def create_route_jm(coordinates: Coordinates):
 
 @app.post("/route_ojp/")
 async def create_route_ojp(coordinates: Coordinates):
-    print(coordinates)
     start_request = time.time()
     try:
         # measure request time
