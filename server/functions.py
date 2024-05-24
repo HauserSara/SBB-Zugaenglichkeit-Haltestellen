@@ -99,7 +99,7 @@ def get_routes_ojp(lon1, lat1, lon2, lat2):
                                 <Latitude>{lat1}</Latitude>
                             </ojp:GeoPosition>
                             <ojp:LocationName>
-                                <ojp:Text>Kasparstrasse</ojp:Text>
+                                <ojp:Text>{lon1}, {lat1}</ojp:Text>
                             </ojp:LocationName>
                         </ojp:PlaceRef>
                         <ojp:DepArrTime>2024-05-20T11:57:19</ojp:DepArrTime>
@@ -115,7 +115,7 @@ def get_routes_ojp(lon1, lat1, lon2, lat2):
                                 <Latitude>{lat2}</Latitude>
                             </ojp:GeoPosition>
                             <ojp:LocationName>
-                                <obj:Text>Dornhaldestrasse</obj:Text>
+                                <obj:Text>{lon2}, {lat2}</obj:Text>
                             </ojp:LocationName>
                         </ojp:PlaceRef>
                         <ojp:IndividualTransportOptions>
