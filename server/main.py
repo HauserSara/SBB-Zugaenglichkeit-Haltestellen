@@ -33,7 +33,7 @@ transformer = Transformer.from_crs('epsg:4326', 'epsg:2056')
 
 @app.post("/route_journeymaps/")
 async def create_route_jm(coordinates: Coordinates):
-    print(coordinates)
+    start_request = time.time()
     # get stop places within a certain distance of the given coordinates
     start_time = time.time()
     try:
@@ -211,11 +211,13 @@ async def create_route_jm(coordinates: Coordinates):
     # Call the get_journey function with the provided time and the calculated numbers
     # journey = get_journey(number_start, number_dest, coordinates.time)
 
+    print(f"Time taken to return routes: {time.time() - start_request} seconds")
+
     return route_start, route_dest
 
 @app.post("/route_ojp/")
 async def create_route_ojp(coordinates: Coordinates):
-    print(coordinates)
+    start_request = time.time()
     try:
         # measure request time
         start = time.time()
@@ -359,6 +361,8 @@ async def create_route_ojp(coordinates: Coordinates):
 
     for result_id in result_leg_ids.keys():
         print(result_id)
+
+    print(f"Time taken to return routes: {time.time() - start_request} seconds")
     return route
 
 df = pd.read_csv('./prm_connections.csv', sep=';', encoding='utf-8')
