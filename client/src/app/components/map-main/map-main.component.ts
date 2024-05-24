@@ -36,7 +36,9 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
 
   constructor(private sloidService: SloidService) { }
 
-  ngOnInit() {}
+  ngOnInit() {
+    
+  }
 
   checkSloid(sloid: string): void {
     this.sloidService.getSloids(sloid).subscribe({
@@ -51,6 +53,7 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
 
   ngAfterViewInit(): void {
     this.initializeMap();
+    this.map.resize()
   }
 
   onToggleChange(isChecked: boolean): void {
@@ -86,7 +89,7 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
 
   private initializeMap(): void {
     this.map = new Map({
-      container: 'map',
+      container: 'map-main',
       style: `https://journey-maps-tiles.geocdn.sbb.ch/styles/base_bright_v2/style.json?api_key=${this.apiKey}`,
       center: [7.56, 46.85],
       zoom: 10,
