@@ -1,8 +1,9 @@
-from functions import get_stop_places, get_route_jm, get_routes_ojp, handle_leg, transform_coordinates, get_height_profile, calculate_height_meters, weight_routes
+from functions import get_stop_places, get_route_jm, get_routes_ojp, handle_leg, transform_coordinates, get_height_profile_jm, get_height_profile_ojp, calculate_height_meters, weight_routes, get_pt_routes_ojp
 from pyproj import Transformer
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from datetime import datetime
 import time
 import pandas as pd
 import math
@@ -42,12 +43,17 @@ async def create_route_jm(coordinates: Coordinates):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     print(f"Time taken for get_stop_places: {time.time() - start_time} seconds")
-
-    # get the didok-numbers of the stop places
+    indexed_stop_places_start = [(index, stop_place) for index, stop_place in enumerate(stop_places_start)]
+    indexed_stop_places_dest = [(index, stop_place) for index, stop_place in enumerate(stop_places_dest)]
+   
+   # get the didok-numbers of the stop places
+    print(stop_places_start)
     start_time = time.time()
-    didok_number_start = [entry['number'] for entry in stop_places_start]
-    didok_number_dest = [entry['number'] for entry in stop_places_dest]
+    didok_number_start = [(index, entry['number']) for index, entry in indexed_stop_places_start]
+    didok_number_dest = [(index, entry['number']) for index, entry in indexed_stop_places_dest]
     print(f"Time taken for getting didok numbers: {time.time() - start_time} seconds")
+
+    print(didok_number_start)
     # TESTZWECKE
     # print("STOPPLACES")
     # print(len(didok_number_start))
@@ -67,16 +73,16 @@ async def create_route_jm(coordinates: Coordinates):
 
     start_time = time.time()
     routes_start = []
-    for entry in didok_number_start:
-        routes_start.append(get_route_jm(coordinates.lat1, coordinates.lon1, entry, 'start'))
-        print(f"Time taken for get_route start: {time.time() - start_time} seconds")
-    print(routes_start)
+    for index, entry in didok_number_start:
+        routes_start.append((index, get_route_jm(coordinates.lat1, coordinates.lon1, entry, 'start')))
+    print(f"Time taken for get_route start: {time.time() - start_time} seconds")
+    #print(routes_start)
 
     start_time = time.time()
     routes_dest = []
-    for entry in didok_number_dest:
-        routes_dest.append(get_route_jm(coordinates.lat2, coordinates.lon2, entry, 'dest'))
-        print(f"Time taken for get_route dest: {time.time() - start_time} seconds")
+    for index, entry in didok_number_dest:
+        routes_dest.append((index, get_route_jm(coordinates.lat2, coordinates.lon2, entry, 'dest')))
+    print(f"Time taken for get_route dest: {time.time() - start_time} seconds")
 
         # try:
         #     routes_dest.append(get_route_jm(coordinates.lat2, coordinates.lon2, entry, 'dest'))
@@ -99,7 +105,7 @@ async def create_route_jm(coordinates: Coordinates):
 
     # get the coordinates of the routes
     start_time = time.time()
-    for index, feature in enumerate(routes_start):
+    for index, feature in routes_start:
         route = feature['features'][0]['geometry']['coordinates']
         if 'distanceInMeter' not in feature['features'][1]['properties']:
             print(f"Index_start: {index}, Properties: {feature['features'][1]['properties']}")
@@ -115,7 +121,7 @@ async def create_route_jm(coordinates: Coordinates):
     # print(coords_routes_start)
     # print('----------------------------------------')
 
-    for index, feature in enumerate(routes_dest):
+    for index, feature in routes_dest:
         route = feature['features'][0]['geometry']['coordinates']
         #print(len(route))
         if 'distanceInMeter' not in feature['features'][1]['properties']:
@@ -147,15 +153,15 @@ async def create_route_jm(coordinates: Coordinates):
         routes_dest_lv95.append((index, route_lv95, distance))
     print(f"Time taken for transforming coordinates: {time.time() - start_time} seconds")
 
-    print(routes_dest_lv95[0])
+    #print(routes_dest_lv95[0])
     # define lists for the height profiles of the routes
     routes_start_heights = []
     routes_dest_heights = []
     # get the height profiles of the routes
     start_time = time.time()
     for index, route, distance in routes_start_lv95:
-        profile = get_height_profile(index, route, distance)
-        routes_start_heights.append((index, profile))
+        profile = get_height_profile_jm(index, route, distance)
+        routes_start_heights.append((index, profile, distance))
     # TESTZWECKE
     # print("PROFILES")
     # print(len(routes_start_heights))
@@ -164,8 +170,8 @@ async def create_route_jm(coordinates: Coordinates):
     # print('----------------------------------------')
         
     for index, route, distance in routes_dest_lv95:
-        profile = get_height_profile(index, route, distance)
-        routes_dest_heights.append((index, profile))
+        profile = get_height_profile_jm(index, route, distance)
+        routes_dest_heights.append((index, profile, distance))
         #print(profile)
     print(f"Time taken for get_height_profile: {time.time() - start_time} seconds")
     #print(routes_dest_heights[0])
@@ -174,13 +180,12 @@ async def create_route_jm(coordinates: Coordinates):
     # for index, profile in routes_dest_heights[:2]:
     #     print(index, profile[:2])
     # print("========================================")
-    print(routes_dest_heights[0])
 
     # Calculate the heightmeters of the routes
-    start_time = time.time()
-    start_height_meters = calculate_height_meters(routes_start_heights)
-    dest_height_meters = calculate_height_meters(routes_dest_heights)
-    print(f"Time taken for calculate_height_meters: {time.time() - start_time} seconds")
+    # start_time = time.time()
+    # start_height_meters = calculate_height_meters(routes_start_heights)
+    # dest_height_meters = calculate_height_meters(routes_dest_heights)
+    # print(f"Time taken for calculate_height_meters: {time.time() - start_time} seconds")
     # TESTZWECKE
     # print("HEIGHTS")
     # print(start_height_meters)
@@ -189,9 +194,10 @@ async def create_route_jm(coordinates: Coordinates):
 
     # Weight the start and destination routes
     start_time = time.time()
-    start_route_weights = weight_routes(start_height_meters)
-    dest_route_weights = weight_routes(dest_height_meters)
+    start_route_weights = weight_routes(routes_start_heights)
+    dest_route_weights = weight_routes(routes_dest_heights)
     print(f"Time taken for weight_routes: {time.time() - start_time} seconds")
+    print(start_route_weights)
     # TESTZWECKE
     # print("WEIGHTS")
     # print(start_route_weights)
@@ -209,24 +215,30 @@ async def create_route_jm(coordinates: Coordinates):
     # print(route_dest)
 
     # Call the get_journey function with the provided time and the calculated numbers
-    # journey = get_journey(number_start, number_dest, coordinates.time)
+    didok_start = didok_number_start[start_route_weights[0]]
+    didok_dest = didok_number_dest[dest_route_weights[0]]
+    start_name = stop_places_start[start_route_weights[0]]['designationofficial']
+    dest_name = stop_places_dest[dest_route_weights[0]]['designationofficial']
+    print(f'{didok_start[1]}, {start_name}, {didok_dest[1]}, {dest_name}')
+    journey = get_pt_routes_ojp(didok_start[1], start_name, didok_dest[1], dest_name)
 
-    print(f"Time taken to return routes: {time.time() - start_request} seconds")
+    print(f"Time taken to return routes Journey-Maps: {time.time() - start_request} seconds")
 
-    return route_start, route_dest
+    return route_start, route_dest, journey
 
 @app.post("/route_ojp/")
 async def create_route_ojp(coordinates: Coordinates):
     start_request = time.time()
+
+    start_time = time.time()
     try:
-        # measure request time
-        start = time.time()
         routes = get_routes_ojp(coordinates.lon1, coordinates.lat1, coordinates.lon2, coordinates.lat2)
-        end = time.time()
-        print(f"Time taken for get_routes_ojp: {end - start} seconds")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    print(f"Time taken for get_routes_ojp: {time.time() - start_time} seconds")
 
+    # parse the xml response
+    start_time = time.time()
     result_leg_ids = {}
     for trip_result in routes.iter('{http://www.vdv.de/ojp}TripResult'):
         result_id = trip_result.find('{http://www.vdv.de/ojp}ResultId').text
@@ -240,30 +252,34 @@ async def create_route_ojp(coordinates: Coordinates):
             elif trip_leg.find('{http://www.vdv.de/ojp}TimedLeg') is not None:
                 leg_ids[leg_id] = {'type': 'TimedLeg', 'coordinates': []}
         result_leg_ids[result_id] = leg_ids
-
-    print(result_leg_ids)
+    print(f"Time taken for parsing the xml response: {time.time() - start_time} seconds")
 
     # define transformer to convert coordinates from WGS84 to LV95
     transformer = Transformer.from_crs('epsg:4326', 'epsg:2056')
 
     # Transform the coordinates to LV95
+    start_time = time.time()
     result_leg_ids_lv95 = transform_coordinates(result_leg_ids, transformer)
-    #print(result_leg_ids_lv95)
+    print(f"Time taken for transforming coordinates: {time.time() - start_time} seconds")
 
     # Get the height profile for each leg
+    start_time = time.time()
     profiles = {}
-
+    #print(result_leg_ids_lv95)
     for result_id, legs in result_leg_ids_lv95.items():
         for leg_id, leg_info in legs.items():
+            print(f"Length of coordinates for route {result_id}, leg {leg_id}: {len(leg_info['coordinates'])}")
             route = leg_info['coordinates']
+            #print(len(route))
             # Ignore the entry if coordinates are empty or route has only two points
             if len(route) > 2:
-                profile = get_height_profile(result_id, leg_id, route)
+                profile = get_height_profile_ojp(result_id, leg_id, route)
                 # Add the profile to the dictionary
                 if result_id not in profiles:
                     profiles[result_id] = {}
                 profiles[result_id][leg_id] = profile
-
+                print(len(profile))
+    print(f"Time taken for getting height profiles: {time.time() - start_time} seconds")
     # # Write the profiles to a JSON file
     # with open('data/profiles.json', 'w') as f:
     #     json.dump(profiles, f)
@@ -286,6 +302,7 @@ async def create_route_ojp(coordinates: Coordinates):
     #         average_distances[result_id][leg_id] = average_distance
     #         standard_deviations[result_id][leg_id] = standard_deviation
 
+    start_time = time.time()
     slope_factors = {}
     resistances = {}
     total_resistances = {}
@@ -324,16 +341,16 @@ async def create_route_ojp(coordinates: Coordinates):
             # get total distance of a leg (last entry in leg_infos)
             total_distance = leg_infos[-1]['dist']
             for i in range(1, len(leg_infos)):
-                height_difference = abs(leg_infos[i]['alts']['DTM25'] - leg_infos[i-1]['alts']['DTM25'])
-                dist_difference = abs(leg_infos[i]['dist'] - leg_infos[i-1]['dist'])
+                height_difference = leg_infos[i]['alts']['DTM25'] - leg_infos[i-1]['alts']['DTM25']
+                dist_difference = leg_infos[i]['dist'] - leg_infos[i-1]['dist']
                 # calculate the slope angle between two coordinates of a leg
                 slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
                 # calculate the slope factor between two coordinates of a leg
                 slope_factor = dist_difference * math.tan(math.radians(slope_angle))
-                if slope_angle >= 0:
-                    slope_factor += dist_difference
-                else:
-                    slope_factor -= dist_difference
+                # if slope_angle >= 0:
+                #     slope_factor += dist_difference
+                # else:
+                #     slope_factor -= dist_difference
                 # calculate the resistance between two coordinates of a leg
                 resistance = dist_difference * slope_factor
                 total_resistance += resistance
@@ -349,20 +366,23 @@ async def create_route_ojp(coordinates: Coordinates):
     for result_id, legs in resistances.items():
         total_resistances[result_id] = sum(legs.values())
 
-    print(resistances)
-    print(total_resistances)
+    print('Time taken for calculating resistance: ', time.time() - start_time)
+    # print(resistances)
+    # print(total_resistances)
 
     # Find the route with the lowest total resistance
-    min_resistance_route = min(total_resistances.items(), key=lambda x: x[1])
+    start_time = time.time()
+    min_resistance_route = min(total_resistances.items(), key=lambda x: abs(x[1]))
 
     # Write the corresponding entry from result_leg_ids to a new dictionary
     route = {min_resistance_route[0]: result_leg_ids[min_resistance_route[0]]}
-    print(route)
+    print(f"Time taken for finding the route with the lowest resistance: {time.time() - start_time} seconds")
+    # print(route)
 
-    for result_id in result_leg_ids.keys():
-        print(result_id)
+    # for result_id in result_leg_ids.keys():
+    #     print(result_id)
 
-    print(f"Time taken to return routes: {time.time() - start_request} seconds")
+    print(f"Time taken to return routes OJP: {time.time() - start_request} seconds")
     return route
 
 df = pd.read_csv('./prm_connections.csv', sep=';', encoding='utf-8')

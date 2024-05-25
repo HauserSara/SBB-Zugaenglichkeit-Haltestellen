@@ -178,7 +178,7 @@ def transform_coordinates(result_leg_ids_wgs84, transformer):
     return result_leg_ids_lv95
 
 # ======================================= Function API request height profile Journey Maps ==================================== #
-def get_height_profile(index, route, distance):
+def get_height_profile_jm(index, route, distance):
     geom = {
         'type': 'LineString',
         'coordinates': route,
@@ -211,7 +211,7 @@ def get_height_profile(index, route, distance):
         return None
     
 # ======================================= Function API request height profile OJP ==================================== #
-def get_height_profile(result_id, leg_id, route):
+def get_height_profile_ojp(result_id, leg_id, route):
     geom = {
         'type': 'LineString',
         'coordinates': route,
@@ -277,16 +277,87 @@ def calculate_height_meters(height_profiles):
     return height_meters
 
 # ======================================= Function calculate weight ============================================== #
-def weight_routes(height_meters, upwards_weight=1, downwards_weight=0.2):
+def weight_routes(profile):
     weighted_routes = []
 
-    for index, height_meter in height_meters:
-        if height_meter is None:
-            weight = None
+    for index, profile, total_distance in profile:
+        total_resistance = 0
+        if profile is None:
+            total_resistance = None
         else:
-            upwards, downwards = height_meter
-            weight = upwards * upwards_weight + downwards * downwards_weight
-        weighted_routes.append((index, weight))
+            for i in range(1, len(profile)):
+                height_difference = profile[i]['alts']['DTM25'] - profile[i-1]['alts']['DTM25']
+                dist_difference = profile[i]['dist'] - profile[i-1]['dist']
+                # calculate the slope angle between two coordinates of a leg
+                slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
+                # calculate the slope factor between two coordinates of a leg
+                slope_factor = dist_difference * math.tan(math.radians(slope_angle))
+                # calculate the resistance between two coordinates of a leg
+                resistance = dist_difference * slope_factor
+                total_resistance += resistance
+            total_resistance *= total_distance  # multiply the total resistance by the total distance
+        weighted_routes.append((index, total_resistance))
+        
+        # return route with minimal weight, None values are ignored
+        return min(weighted_routes, key=lambda x: abs(x[1]) if x[1] is not None else float('inf'))
+    
+# ======================================= Function OJP request öV-Journey ======================================== #
+def get_pt_routes_ojp(didok_start, name_start, didok_dest, name_dest):
+    url = "https://api.opentransportdata.swiss/ojp2020"
 
-    # return route with minimal weight, None values are ignored
-    return min(weighted_routes, key=lambda x: x[1] if x[1] is not None else float('inf'))
+    headers = {
+        "Content-Type": "application/xml",
+        "Authorization": "Bearer eyJvcmciOiI2NDA2NTFhNTIyZmEwNTAwMDEyOWJiZTEiLCJpZCI6Ijc4MDlhMzhlOWUyMzQzODM4YmJjNWIwNjQxN2Y0NTk3IiwiaCI6Im11cm11cjEyOCJ9"
+    }
+    body = f"""
+    <?xml version="1.0" encoding="utf-8"?>
+    <OJP xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.siri.org.uk/siri" version="1.0" xmlns:ojp="http://www.vdv.de/ojp" xsi:schemaLocation="http://www.siri.org.uk/siri ../ojp-xsd-v1.0/OJP.xsd">
+        <OJPRequest>
+            <ServiceRequest>
+                <RequestTimestamp>2024-05-25T13:00:05.035Z</RequestTimestamp>
+                <RequestorRef>API-Explorer</RequestorRef>
+                <ojp:OJPTripRequest>
+                    <RequestTimestamp>2024-05-25T13:00:05.035Z</RequestTimestamp>
+                    <ojp:Origin>
+                        <ojp:PlaceRef>
+                            <ojp:StopPlaceRef>{didok_start}</ojp:StopPlaceRef>
+                            <ojp:LocationName>
+                                <ojp:Text>{name_start}</ojp:Text>
+                            </ojp:LocationName>
+                        </ojp:PlaceRef>
+                        <ojp:DepArrTime>2024-05-25T14:59:39</ojp:DepArrTime>
+                    </ojp:Origin>
+                    <ojp:Destination>
+                        <ojp:PlaceRef>
+                            <ojp:StopPlaceRef>{didok_dest}</ojp:StopPlaceRef>
+                            <ojp:LocationName>
+                                <ojp:Text>{name_dest}</ojp:Text>
+                            </ojp:LocationName>
+                        </ojp:PlaceRef>
+                    </ojp:Destination>
+                    <ojp:Params>
+                        <ojp:IncludeTrackSections>true</ojp:IncludeTrackSections>
+                        <ojp:IncludeLegProjection>true</ojp:IncludeLegProjection>
+                        <ojp:IncludeTurnDescription>true</ojp:IncludeTurnDescription>
+                        <ojp:IncludeIntermediateStops>false</ojp:IncludeIntermediateStops>
+                    </ojp:Params>
+                </ojp:OJPTripRequest>
+            </ServiceRequest>
+        </OJPRequest>
+    </OJP>
+    """
+
+    response = requests.post(url, headers=headers, data=body)
+
+    # ADD ERROR HANDLING
+    # ...
+
+    print("Status code:", response.status_code)
+
+    # # write response to xml
+    # with open('output.xml', 'w') as f:
+    #     f.write(response.text)
+    # Parse the response text as XML
+    root = ET.fromstring(response.text)
+
+    return response.text

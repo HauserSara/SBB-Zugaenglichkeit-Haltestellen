@@ -1,5 +1,5 @@
 import pandas as pd
-from functions import get_stop_places, get_routes_ojp, handle_leg, transform_coordinates, get_height_profile, calculate_height_meters, weight_routes
+from functions import get_stop_places, get_routes_ojp, handle_leg, transform_coordinates, get_height_profile_ojp, calculate_height_meters, weight_routes
 from pyproj import Transformer
 import json
 import datetime
@@ -59,7 +59,7 @@ for result_id, legs in result_leg_ids_lv95.items():
         route = leg_info['coordinates']
         # Ignore the entry if coordinates are empty or route has only two points
         if len(route) > 2:
-            profile = get_height_profile(result_id, leg_id, route)
+            profile = get_height_profile_ojp(result_id, leg_id, route)
             # Add the profile to the dictionary
             if result_id not in profiles:
                 profiles[result_id] = {}
