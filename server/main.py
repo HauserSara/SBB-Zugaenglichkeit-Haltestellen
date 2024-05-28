@@ -49,11 +49,13 @@ async def create_route_jm(coordinates: Coordinates):
     print(f"Time taken for get_stop_places: {time.time() - start_time} seconds")
     indexed_stop_places_start = [(index, stop_place) for index, stop_place in enumerate(stop_places_start)]
     indexed_stop_places_dest = [(index, stop_place) for index, stop_place in enumerate(stop_places_dest)]
-   
    # get the didok-numbers of the stop places
     start_time = time.time()
     didok_number_start = [(index, entry['number']) for index, entry in indexed_stop_places_start]
     didok_number_dest = [(index, entry['number']) for index, entry in indexed_stop_places_dest]
+    #teststart_name = stop_places_start[start_route_weights[0]]['designationofficial']
+    #testdest_name = [(index, name['designationofficial'], entry['number']) for index, name, entry in indexed_stop_places_dest]
+    #print(testdest_name)
     print(f"Time taken for getting didok numbers: {time.time() - start_time} seconds")
 
     # TESTZWECKE
@@ -134,6 +136,57 @@ async def create_route_jm(coordinates: Coordinates):
     #print(coords_routes_dest[0])
     print(f"Time taken for getting coordinates: {time.time() - start_time} seconds")
 
+    # MAP
+    # Define a list of colors
+    colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred',
+            'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue',
+            'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen',
+            'gray', 'black', 'lightgray']
+
+    color_cycle = itertools.cycle(colors)  # Create an infinite iterator of colors
+
+    # Create a map centered at the first coordinate of the first route
+    first_coordinate = coords_routes_start[0][1][0]
+    m = folium.Map(location=[float(first_coordinate[1]), float(first_coordinate[0])], zoom_start=14)
+
+    # Iterate over the start routes
+    for index, route, distance in coords_routes_start:
+        # Get a new color for the current route
+        color = next(color_cycle)
+
+        # Create a feature group for this route
+        feature_group = folium.FeatureGroup(name=f'Start Route {index}')
+
+        # Create a polyline for the route
+        polyline = folium.PolyLine([(float(coord[1]), float(coord[0])) for coord in route], color=color, weight=2.5, opacity=1)
+        feature_group.add_child(polyline)
+        m.add_child(feature_group)
+
+    # Reset the color cycle for the destination routes
+    color_cycle = itertools.cycle(colors)
+
+    # Iterate over the destination routes
+    for index, route, distance in coords_routes_dest:
+        # Get a new color for the current route
+        color = next(color_cycle)
+
+        # Create a feature group for this route
+        feature_group = folium.FeatureGroup(name=f'Dest Route {index}')
+
+        # Create a polyline for the route
+        polyline = folium.PolyLine([(float(coord[1]), float(coord[0])) for coord in route], color=color, weight=2.5, opacity=1)
+        feature_group.add_child(polyline)
+        m.add_child(feature_group)
+
+    # Add layer control to the map
+    folium.LayerControl().add_to(m)
+
+    # Save the map to an HTML file
+    maps_dir = 'data/maps'
+    os.makedirs(maps_dir, exist_ok=True)
+    map_file = os.path.join(maps_dir, 'map_all_routes.html')
+    m.save(map_file)
+
     # TESTZWECKE
     # print(len(coords_routes_dest))
     # print(coords_routes_dest[0])
@@ -199,7 +252,8 @@ async def create_route_jm(coordinates: Coordinates):
     start_route_weights = weight_routes(routes_start_heights)
     dest_route_weights = weight_routes(routes_dest_heights)
     print(f"Time taken for weight_routes: {time.time() - start_time} seconds")
-    print(start_route_weights)
+    #print(start_route_weights)
+    #print(dest_route_weights)
     # TESTZWECKE
     # print("WEIGHTS")
     # print(start_route_weights)
@@ -212,7 +266,6 @@ async def create_route_jm(coordinates: Coordinates):
     route_start = routes_start[start_route_weights[0]][1]
     route_dest = routes_dest[dest_route_weights[0]][1]
     print(f"Time taken for choosing the route: {time.time() - start_time} seconds")
-    print(route_start)
     # TESTZWECKE
     # print(route_start)
     # print(route_dest)
@@ -226,9 +279,6 @@ async def create_route_jm(coordinates: Coordinates):
     journey = get_pt_routes_ojp(didok_start[1], start_name, didok_dest[1], dest_name)
 
     print(f"Time taken to return routes Journey-Maps: {time.time() - start_request} seconds")
-    print(route_start)
-    print('----------------------------------------')
-    print(route_dest)
     return route_start, route_dest
 
 @app.post("/route_ojp/")
@@ -358,13 +408,13 @@ async def create_route_ojp(coordinates: Coordinates):
                 # calculate the slope angle between two coordinates of a leg
                 slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
                 # calculate the slope factor between two coordinates of a leg
-                slope_factor = dist_difference * math.tan(slope_angle)
+                slope_factor = dist_difference * math.tan(1.1*slope_angle)
                 # if slope_angle >= 0:
                 #     slope_factor += dist_difference
                 # else:
                 #     slope_factor -= dist_difference
                 # calculate the resistance between two coordinates of a leg
-                resistance = dist_difference * slope_factor
+                resistance = abs(dist_difference * slope_factor)
                 # sum up the resistance
                 total_resistance += resistance
             # multiply the total resistance by the total distance
@@ -388,7 +438,7 @@ async def create_route_ojp(coordinates: Coordinates):
 
     start_time = time.time()
     # Find the route with the lowest total resistance
-    min_resistance_route = min(total_resistances.items(), key=lambda x: abs(x[1]))
+    min_resistance_route = min(total_resistances.items(), key=lambda x: x[1])
 
     # Write the corresponding entry from result_leg_ids to a new dictionary
     route = {min_resistance_route[0]: result_leg_ids[min_resistance_route[0]]}
@@ -422,12 +472,20 @@ async def create_route_ojp(coordinates: Coordinates):
         # Get a new color for the current trip result
         color = next(color_cycle)
 
+        # Create a feature group for this trip result
+        feature_group = folium.FeatureGroup(name=result_id)
+
         # Iterate over the legs of the current trip result
         for leg_id, leg_info in result_legs.items():
             # Check if coordinates is not empty and create a polyline
             if leg_info['coordinates']:
                 polyline = folium.PolyLine(leg_info['coordinates'], color=color, weight=2.5, opacity=1)
-                m.add_child(polyline)
+                feature_group.add_child(polyline)
+
+        m.add_child(feature_group)
+
+    # Add layer control to the map
+    folium.LayerControl().add_to(m)
 
     # Save the map to an HTML file
     map_file = os.path.join(maps_dir, 'map_all_routes.html')

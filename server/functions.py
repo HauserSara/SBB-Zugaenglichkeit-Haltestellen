@@ -295,15 +295,17 @@ def weight_routes(profile):
                 # calculate the slope angle between two coordinates of a leg
                 slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
                 # calculate the slope factor between two coordinates of a leg
-                slope_factor = dist_difference * math.tan(math.radians(slope_angle))
+                slope_factor = dist_difference * math.tan(math.radians(1.1*slope_angle))
                 # calculate the resistance between two coordinates of a leg
-                resistance = dist_difference * slope_factor
+                resistance = abs(dist_difference * slope_factor)
                 total_resistance += resistance
-            total_resistance *= total_distance  # multiply the total resistance by the total distance
+            #total_resistance *= total_distance  # multiply the total resistance by the total distance
         weighted_routes.append((index, total_resistance))
+    
+    print(weighted_routes)
         
-        # return route with minimal weight, None values are ignored
-        return min(weighted_routes, key=lambda x: abs(x[1]) if x[1] is not None else float('inf'))
+    # return route with minimal weight, None values are ignored
+    return min(weighted_routes, key=lambda x: x[1] if x[1] is not None else float('inf'))
     
 # ======================================= Function OJP request öV-Journey ======================================== #
 def get_pt_routes_ojp(didok_start, name_start, didok_dest, name_dest):
