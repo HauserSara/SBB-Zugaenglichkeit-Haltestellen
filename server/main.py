@@ -37,6 +37,7 @@ transformer = Transformer.from_crs('epsg:4326', 'epsg:2056')
 
 @app.post("/route_journeymaps/")
 async def create_route_jm(coordinates: Coordinates):
+    print(coordinates)
     start_request = time.time()
     # get stop places within a certain distance of the given coordinates
     start_time = time.time()
@@ -50,7 +51,6 @@ async def create_route_jm(coordinates: Coordinates):
     indexed_stop_places_dest = [(index, stop_place) for index, stop_place in enumerate(stop_places_dest)]
    
    # get the didok-numbers of the stop places
-    print(stop_places_start)
     start_time = time.time()
     didok_number_start = [(index, entry['number']) for index, entry in indexed_stop_places_start]
     didok_number_dest = [(index, entry['number']) for index, entry in indexed_stop_places_dest]
@@ -209,10 +209,10 @@ async def create_route_jm(coordinates: Coordinates):
     # Choose the route with the lowest weight (route coordinates in WGS84)
     start_time = time.time()
     print(f'weight: {start_route_weights}')
-    route_start = routes_start[start_route_weights[0]]
-    route_dest = routes_dest[dest_route_weights[0]]
+    route_start = routes_start[start_route_weights[0]][1]
+    route_dest = routes_dest[dest_route_weights[0]][1]
     print(f"Time taken for choosing the route: {time.time() - start_time} seconds")
-
+    print(route_start)
     # TESTZWECKE
     # print(route_start)
     # print(route_dest)
@@ -226,7 +226,9 @@ async def create_route_jm(coordinates: Coordinates):
     journey = get_pt_routes_ojp(didok_start[1], start_name, didok_dest[1], dest_name)
 
     print(f"Time taken to return routes Journey-Maps: {time.time() - start_request} seconds")
-
+    print(route_start)
+    print('----------------------------------------')
+    print(route_dest)
     return route_start, route_dest
 
 @app.post("/route_ojp/")
