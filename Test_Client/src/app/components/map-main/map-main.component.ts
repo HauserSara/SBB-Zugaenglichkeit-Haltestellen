@@ -119,35 +119,39 @@ export class MapMain implements OnDestroy, AfterViewInit {
       complete: () => console.log("The POST observable is now completed.")
     });
   }
+
   displayGeoJSON(responseData: any[]): void {
+    console.log("Processing GeoJSON Data:", responseData);
     responseData.forEach((item) => {
-      const geoJSONData = item[1]; // Extrahieren des GeoJSON-Objekts
-      const layerColor = '#FF0000';
-      const sourceId = `route-${geoJSONData.features[0].properties.type}-${item[0]}`; // Eindeutige Source ID
-      const layerId = `route-layer-${geoJSONData.features[0].properties.type}-${item[0]}`;
-  
-      if (!this.map.getSource(sourceId)) {
-        this.map.addSource(sourceId, {
-          type: 'geojson',
-          data: geoJSONData
-        });
-  
-        this.map.addLayer({
-          id: layerId,
-          type: 'line',
-          source: sourceId,
-          layout: {},
-          paint: {
-            'line-color': layerColor,
-            'line-width': 5
-          }
-        });
-      } else {
-        // Update the source data if it already exists
-        (this.map.getSource(sourceId) as GeoJSONSource).setData(geoJSONData);
-      }
+        const geoJSONData = item[1]; // Assuming the GeoJSON object is at index 1
+        console.log("GeoJSON FeatureCollection:", geoJSONData);
+        const layerColor = '#FF0000';
+        const sourceId = `route-${geoJSONData.features[0].properties.type}-${item[0]}`;
+        const layerId = `route-layer-${geoJSONData.features[0].properties.type}-${item[0]}`;
+
+        if (!this.map.getSource(sourceId)) {
+            this.map.addSource(sourceId, {
+                type: 'geojson',
+                data: geoJSONData
+            });
+
+            this.map.addLayer({
+                id: layerId,
+                type: 'line',
+                source: sourceId,
+                layout: {},
+                paint: {
+                    'line-color': layerColor,
+                    'line-width': 5
+                }
+            });
+        } else {
+            // Update the source data if it already exists
+            (this.map.getSource(sourceId) as GeoJSONSource).setData(geoJSONData);
+        }
     });
-  }
+}
+
   
 
   clearMarkers(): void {
