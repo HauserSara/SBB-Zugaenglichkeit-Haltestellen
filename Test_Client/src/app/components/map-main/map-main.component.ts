@@ -52,6 +52,24 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
       this.map.on('click', (e) => {
         this.handleMapClick(e.lngLat);
       });
+      this.map.addSource('swisstopo-height', {
+        'type': 'raster',
+        'tiles': [
+          'https://wms.geo.admin.ch/?service=WMS&request=GetMap&layers=ch.swisstopo.pixelkarte-farbe&styles=default&format=image/png&transparent=true&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'
+        ],
+        'tileSize': 256
+      });
+      
+      this.map.addLayer({
+        'id': 'swisstopo-height-layer',
+        'type': 'raster',
+        'source': 'swisstopo-height',
+        'paint': {
+          // Set the opacity of the raster layer to 0.4, which corresponds to 60% transparency
+          'raster-opacity': 0.4
+        }
+      });
+      
     });
 
     const attributionControl = new AttributionControl({
