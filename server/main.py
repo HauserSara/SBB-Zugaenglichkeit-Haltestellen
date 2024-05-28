@@ -1,4 +1,4 @@
-from functions import get_stop_places, get_route_jm, get_routes_ojp, handle_leg, transform_coordinates, get_height_profile_jm, get_height_profile_ojp, calculate_height_meters, weight_routes, get_pt_routes_ojp
+from functions import get_stop_places, get_route_jm, get_routes_ojp, get_coordinates, transform_coordinates, get_height_profile_jm, get_height_profile_ojp, calculate_height_meters, weight_routes, get_pt_routes_ojp
 from pyproj import Transformer
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +7,9 @@ from datetime import datetime
 import time
 import pandas as pd
 import math
+import folium
+import os
+import itertools
 
 app = FastAPI()
 
@@ -231,6 +234,7 @@ async def create_route_ojp(coordinates: Coordinates):
     start_request = time.time()
 
     start_time = time.time()
+    # get the routes between the coordinates
     try:
         routes = get_routes_ojp(coordinates.lon1, coordinates.lat1, coordinates.lon2, coordinates.lat2)
     except Exception as e:
@@ -241,38 +245,42 @@ async def create_route_ojp(coordinates: Coordinates):
     start_time = time.time()
     result_leg_ids = {}
     for trip_result in routes.iter('{http://www.vdv.de/ojp}TripResult'):
+        # get the result ids
         result_id = trip_result.find('{http://www.vdv.de/ojp}ResultId').text
         leg_ids = {}
         for trip_leg in trip_result.iter('{http://www.vdv.de/ojp}TripLeg'):
+            # get the leg ids
             leg_id = trip_leg.find('{http://www.vdv.de/ojp}LegId').text
+            # get the leg type and coordinates of the legs
             if trip_leg.find('{http://www.vdv.de/ojp}ContinuousLeg') is not None:
-                leg_ids[leg_id] = handle_leg(trip_leg, 'ContinuousLeg')
+                leg_ids[leg_id] = get_coordinates(trip_leg, 'ContinuousLeg')
             elif trip_leg.find('{http://www.vdv.de/ojp}TransferLeg') is not None:
-                leg_ids[leg_id] = handle_leg(trip_leg, 'TransferLeg')
+                leg_ids[leg_id] = get_coordinates(trip_leg, 'TransferLeg')
             elif trip_leg.find('{http://www.vdv.de/ojp}TimedLeg') is not None:
-                leg_ids[leg_id] = {'type': 'TimedLeg', 'coordinates': []}
+                leg_ids[leg_id] = get_coordinates(trip_leg, 'TimedLeg')
         result_leg_ids[result_id] = leg_ids
     print(f"Time taken for parsing the xml response: {time.time() - start_time} seconds")
 
     # define transformer to convert coordinates from WGS84 to LV95
     transformer = Transformer.from_crs('epsg:4326', 'epsg:2056')
 
-    # Transform the coordinates to LV95
     start_time = time.time()
+    # Transform the coordinates of the footpaths to LV95
     result_leg_ids_lv95 = transform_coordinates(result_leg_ids, transformer)
     print(f"Time taken for transforming coordinates: {time.time() - start_time} seconds")
 
-    # Get the height profile for each leg
     start_time = time.time()
+    # Get the height profile for each leg
     profiles = {}
     #print(result_leg_ids_lv95)
     for result_id, legs in result_leg_ids_lv95.items():
         for leg_id, leg_info in legs.items():
-            print(f"Length of coordinates for route {result_id}, leg {leg_id}: {len(leg_info['coordinates'])}")
+            #print(f"Length of coordinates for route {result_id}, leg {leg_id}: {len(leg_info['coordinates'])}")
             route = leg_info['coordinates']
             #print(len(route))
             # Ignore the entry if coordinates are empty or route has only two points
             if len(route) > 2:
+                # get the height profiles for the legs
                 profile = get_height_profile_ojp(result_id, leg_id, route)
                 # Add the profile to the dictionary
                 if result_id not in profiles:
@@ -334,27 +342,32 @@ async def create_route_ojp(coordinates: Coordinates):
     # for result_id, legs in resistances.items():
     #     total_resistances[result_id] = sum(legs.values())
 
-    # calculate weight (total distance multiplied with total resistance)
+    # calculate weight for each leg (total distance multiplied with total resistance)
     for result_id, legs in profiles.items():
         for leg_id, leg_infos in legs.items():
             total_resistance = 0
             # get total distance of a leg (last entry in leg_infos)
             total_distance = leg_infos[-1]['dist']
             for i in range(1, len(leg_infos)):
+                # calculate the height difference between two coordinates of a leg
                 height_difference = leg_infos[i]['alts']['DTM25'] - leg_infos[i-1]['alts']['DTM25']
+                # calculate the distance between two coordinates of a leg
                 dist_difference = leg_infos[i]['dist'] - leg_infos[i-1]['dist']
                 # calculate the slope angle between two coordinates of a leg
                 slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
                 # calculate the slope factor between two coordinates of a leg
-                slope_factor = dist_difference * math.tan(math.radians(slope_angle))
+                slope_factor = dist_difference * math.tan(slope_angle)
                 # if slope_angle >= 0:
                 #     slope_factor += dist_difference
                 # else:
                 #     slope_factor -= dist_difference
                 # calculate the resistance between two coordinates of a leg
                 resistance = dist_difference * slope_factor
+                # sum up the resistance
                 total_resistance += resistance
-            total_resistance *= total_distance  # multiply the total resistance by the total distance
+            # multiply the total resistance by the total distance
+            #total_resistance *= total_distance 
+            # add the resistance values of the legs to the dictionary
             if result_id not in slope_factors:
                 slope_factors[result_id] = {}
                 resistances[result_id] = {}
@@ -363,15 +376,16 @@ async def create_route_ojp(coordinates: Coordinates):
                 resistances[result_id][leg_id] = total_resistance
             slope_factors[result_id][leg_id].append({'dist': dist_difference, 'slope_factor': slope_factor})
 
+    # calculate the total resistance for each route
     for result_id, legs in resistances.items():
         total_resistances[result_id] = sum(legs.values())
 
     print('Time taken for calculating resistance: ', time.time() - start_time)
-    # print(resistances)
-    # print(total_resistances)
+    print(resistances)
+    print(total_resistances)
 
-    # Find the route with the lowest total resistance
     start_time = time.time()
+    # Find the route with the lowest total resistance
     min_resistance_route = min(total_resistances.items(), key=lambda x: abs(x[1]))
 
     # Write the corresponding entry from result_leg_ids to a new dictionary
@@ -379,8 +393,43 @@ async def create_route_ojp(coordinates: Coordinates):
     print(f"Time taken for finding the route with the lowest resistance: {time.time() - start_time} seconds")
     # print(route)
 
-    # for result_id in result_leg_ids.keys():
-    #     print(result_id)
+    for result_id in result_leg_ids.keys():
+        print(result_id)
+
+    # ################################## Map ##################################
+    # Directory to save the maps
+    maps_dir = 'data/maps'
+    os.makedirs(maps_dir, exist_ok=True)
+
+    # Define a list of colors
+    colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred',
+            'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue',
+            'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen',
+            'gray', 'black', 'lightgray']
+
+    color_cycle = itertools.cycle(colors)  # Create an infinite iterator of colors
+
+    # Create a map centered at the first coordinate of the first leg of the first trip result
+    first_result_id, first_result_legs = list(result_leg_ids.items())[0]
+    first_leg_id, first_leg_info = list(first_result_legs.items())[0]
+    first_coordinate = first_leg_info['coordinates'][0]
+    m = folium.Map(location=[float(first_coordinate[0]), float(first_coordinate[1])], zoom_start=14)
+
+    # Iterate over the trip results
+    for result_id, result_legs in result_leg_ids.items():
+        # Get a new color for the current trip result
+        color = next(color_cycle)
+
+        # Iterate over the legs of the current trip result
+        for leg_id, leg_info in result_legs.items():
+            # Check if coordinates is not empty and create a polyline
+            if leg_info['coordinates']:
+                polyline = folium.PolyLine(leg_info['coordinates'], color=color, weight=2.5, opacity=1)
+                m.add_child(polyline)
+
+    # Save the map to an HTML file
+    map_file = os.path.join(maps_dir, 'map_all_routes.html')
+    m.save(map_file)
 
     print(f"Time taken to return routes OJP: {time.time() - start_request} seconds")
     return route
