@@ -56,7 +56,6 @@ async def create_route_jm(coordinates: Coordinates):
     didok_number_dest = [(index, entry['number']) for index, entry in indexed_stop_places_dest]
     print(f"Time taken for getting didok numbers: {time.time() - start_time} seconds")
 
-    print(didok_number_start)
     # TESTZWECKE
     # print("STOPPLACES")
     # print(len(didok_number_start))
@@ -209,6 +208,7 @@ async def create_route_jm(coordinates: Coordinates):
 
     # Choose the route with the lowest weight (route coordinates in WGS84)
     start_time = time.time()
+    print(f'weight: {start_route_weights}')
     route_start = routes_start[start_route_weights[0]]
     route_dest = routes_dest[dest_route_weights[0]]
     print(f"Time taken for choosing the route: {time.time() - start_time} seconds")
