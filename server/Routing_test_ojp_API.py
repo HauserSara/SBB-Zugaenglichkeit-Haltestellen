@@ -1,5 +1,5 @@
 import pandas as pd
-from functions import get_stop_places, get_routes_ojp, handle_leg, transform_coordinates, get_height_profile_ojp, calculate_height_meters, weight_routes
+from functions import get_stop_places, get_routes_ojp, get_coordinates, transform_coordinates, get_height_profile_ojp, calculate_height_meters, weight_routes
 from pyproj import Transformer
 import json
 import datetime
@@ -32,11 +32,11 @@ for trip_result in routes.iter('{http://www.vdv.de/ojp}TripResult'):
     for trip_leg in trip_result.iter('{http://www.vdv.de/ojp}TripLeg'):
         leg_id = trip_leg.find('{http://www.vdv.de/ojp}LegId').text
         if trip_leg.find('{http://www.vdv.de/ojp}ContinuousLeg') is not None:
-            leg_ids[leg_id] = handle_leg(trip_leg, 'ContinuousLeg')
+            leg_ids[leg_id] = get_coordinates(trip_leg, 'ContinuousLeg')
         elif trip_leg.find('{http://www.vdv.de/ojp}TransferLeg') is not None:
-            leg_ids[leg_id] = handle_leg(trip_leg, 'TransferLeg')
+            leg_ids[leg_id] = get_coordinates(trip_leg, 'TransferLeg')
         elif trip_leg.find('{http://www.vdv.de/ojp}TimedLeg') is not None:
-            leg_ids[leg_id] = handle_leg(trip_leg, 'TimedLeg')
+            leg_ids[leg_id] = get_coordinates(trip_leg, 'TimedLeg')
     result_leg_ids[result_id] = leg_ids
 
 print(result_leg_ids)

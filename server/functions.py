@@ -151,7 +151,7 @@ def get_routes_ojp(lon1, lat1, lon2, lat2):
     return root
 
 # ======================================= Handle Trip Leg for accessing coordinates (OJP) ========================= #
-def handle_leg(trip_leg, leg_type):
+def get_coordinates(trip_leg, leg_type):
     coordinates = []
     for link_projection in trip_leg.iter('{http://www.vdv.de/ojp}LinkProjection'):
         for position in link_projection.iter('{http://www.vdv.de/ojp}Position'):
@@ -162,16 +162,20 @@ def handle_leg(trip_leg, leg_type):
 
 # ======================================= Function OJP convert coordinates (WGS84 to LV95) ======================= #
 def transform_coordinates(result_leg_ids_wgs84, transformer):
-
     result_leg_ids_lv95 = {}
     for result_id, legs in result_leg_ids_wgs84.items():
         leg_ids_lv95 = {}
         for leg_id, leg_info in legs.items():
-            coordinates_lv95 = []
-            for latitude, longitude in leg_info['coordinates']:
-                # Transform the coordinates to LV95
-                lv95_Y, lv95_X = transformer.transform(latitude, longitude)
-                coordinates_lv95.append([round(lv95_Y, 1), round(lv95_X, 1)])
+            # Ignore the leg if it's a Public Transport Leg
+            if leg_info['type'] == 'TimedLeg':
+                continue
+            # transform the coordinates of the footpath legs
+            else:
+                coordinates_lv95 = []
+                for latitude, longitude in leg_info['coordinates']:
+                    # Transform the coordinates to LV95
+                    lv95_Y, lv95_X = transformer.transform(latitude, longitude)
+                    coordinates_lv95.append([round(lv95_Y, 1), round(lv95_X, 1)])
             leg_ids_lv95[leg_id] = {'type': leg_info['type'], 'coordinates': coordinates_lv95}
         result_leg_ids_lv95[result_id] = leg_ids_lv95
 
