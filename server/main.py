@@ -227,7 +227,7 @@ async def create_route_jm(coordinates: Coordinates):
 
     print(f"Time taken to return routes Journey-Maps: {time.time() - start_request} seconds")
 
-    return route_start, route_dest, journey
+    return route_start, route_dest
 
 @app.post("/route_ojp/")
 async def create_route_ojp(coordinates: Coordinates):
