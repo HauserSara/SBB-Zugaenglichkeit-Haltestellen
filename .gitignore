@@ -1,2 +1,4 @@
 .DS_Store
+server/data/maps/map_all_routes.html
+server/output.xml
 
