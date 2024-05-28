@@ -1,4 +1,4 @@
-from functions import get_stop_places, get_route_jm, get_routes_ojp, get_coordinates, transform_coordinates, get_height_profile_jm, get_height_profile_ojp, calculate_height_meters, weight_routes, get_pt_routes_ojp
+from functions import get_stop_places, get_route_jm, get_routes_ojp, get_coordinates, transform_coordinates, get_height_profile_jm, get_height_profile_ojp, calculate_resistance, weight_routes, get_pt_routes_ojp
 from pyproj import Transformer
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -136,7 +136,7 @@ async def create_route_jm(coordinates: Coordinates):
     #print(coords_routes_dest[0])
     print(f"Time taken for getting coordinates: {time.time() - start_time} seconds")
 
-    # MAP
+    ######################## MAP ########################
     # Define a list of colors
     colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred',
             'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue',
@@ -186,6 +186,8 @@ async def create_route_jm(coordinates: Coordinates):
     os.makedirs(maps_dir, exist_ok=True)
     map_file = os.path.join(maps_dir, 'map_all_routes.html')
     m.save(map_file)
+
+    ##########################################################
 
     # TESTZWECKE
     # print(len(coords_routes_dest))
@@ -339,7 +341,7 @@ async def create_route_ojp(coordinates: Coordinates):
                 if result_id not in profiles:
                     profiles[result_id] = {}
                 profiles[result_id][leg_id] = profile
-                print(len(profile))
+                #print(len(profile))
     print(f"Time taken for getting height profiles: {time.time() - start_time} seconds")
     # # Write the profiles to a JSON file
     # with open('data/profiles.json', 'w') as f:
@@ -364,7 +366,7 @@ async def create_route_ojp(coordinates: Coordinates):
     #         standard_deviations[result_id][leg_id] = standard_deviation
 
     start_time = time.time()
-    slope_factors = {}
+    #slope_factors = {}
     resistances = {}
     total_resistances = {}
 
@@ -398,44 +400,40 @@ async def create_route_ojp(coordinates: Coordinates):
     # calculate weight for each leg (total distance multiplied with total resistance)
     for result_id, legs in profiles.items():
         for leg_id, leg_infos in legs.items():
-            total_resistance = 0
-            # get total distance of a leg (last entry in leg_infos)
-            total_distance = leg_infos[-1]['dist']
-            for i in range(1, len(leg_infos)):
-                # calculate the height difference between two coordinates of a leg
-                height_difference = leg_infos[i]['alts']['DTM25'] - leg_infos[i-1]['alts']['DTM25']
-                # calculate the distance between two coordinates of a leg
-                dist_difference = leg_infos[i]['dist'] - leg_infos[i-1]['dist']
-                # calculate the slope angle between two coordinates of a leg
-                slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
-                # calculate the slope factor between two coordinates of a leg
-                slope_factor = dist_difference * math.tan(1.1*slope_angle)
-                # if slope_angle >= 0:
-                #     slope_factor += dist_difference
-                # else:
-                #     slope_factor -= dist_difference
-                # calculate the resistance between two coordinates of a leg
-                resistance = abs(dist_difference * slope_factor)
-                # sum up the resistance
-                total_resistance += resistance
+            total_resistance = calculate_resistance(leg_infos)
+            # total_resistance = 0
+            # #get total distance of a leg (last entry in leg_infos)
+            # total_distance = leg_infos[-1]['dist']
+            # for i in range(1, len(leg_infos)):
+            #     # calculate the height difference between two coordinates of a leg
+            #     height_difference = leg_infos[i]['alts']['DTM25'] - leg_infos[i-1]['alts']['DTM25']
+            #     # calculate the distance between two coordinates of a leg
+            #     dist_difference = leg_infos[i]['dist'] - leg_infos[i-1]['dist']
+            #     # calculate the slope angle between two coordinates of a leg
+            #     slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
+            #     # calculate the slope factor between two coordinates of a leg
+            #     slope_factor = dist_difference * math.tan(1.1*slope_angle)
+            #     # calculate the resistance between two coordinates of a leg
+            #     resistance = abs(dist_difference * slope_factor)
+            #     # sum up the resistance
+            #     total_resistance += resistance
             # multiply the total resistance by the total distance
             #total_resistance *= total_distance 
             # add the resistance values of the legs to the dictionary
-            if result_id not in slope_factors:
-                slope_factors[result_id] = {}
+            if result_id not in resistances:
+                #slope_factors[result_id] = {}
                 resistances[result_id] = {}
-            if leg_id not in slope_factors[result_id]:
-                slope_factors[result_id][leg_id] = []
+            if leg_id not in resistances[result_id]:
+                #slope_factors[result_id][leg_id] = []
                 resistances[result_id][leg_id] = total_resistance
-            slope_factors[result_id][leg_id].append({'dist': dist_difference, 'slope_factor': slope_factor})
-
+            #slope_factors[result_id][leg_id].append({'dist': dist_difference, 'slope_factor': slope_factor})
+    print(f'resistance values of legs: {resistances}')
     # calculate the total resistance for each route
     for result_id, legs in resistances.items():
         total_resistances[result_id] = sum(legs.values())
 
     print('Time taken for calculating resistance: ', time.time() - start_time)
-    print(resistances)
-    print(total_resistances)
+    print(f'total_resistances: {total_resistances}')
 
     start_time = time.time()
     # Find the route with the lowest total resistance
@@ -447,7 +445,7 @@ async def create_route_ojp(coordinates: Coordinates):
     # print(route)
 
     for result_id in result_leg_ids.keys():
-        print(result_id)
+        print(f'result_id: {result_id}')
 
     # ################################## Map ##################################
     # Directory to save the maps

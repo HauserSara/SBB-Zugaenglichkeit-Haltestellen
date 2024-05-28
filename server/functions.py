@@ -291,34 +291,62 @@ def calculate_height_meters(height_profiles):
         height_meters.append((index, (round(upwards, 1), round(downwards, 1))))
 
     return height_meters
+# ======================================= Function calculate resistance ========================================== #
+def calculate_resistance(profile):
+    total_resistance = 0
+    for i in range(1, len(profile)):
+        # calculate the height difference between two coordinates
+        height_difference = profile[i]['alts']['DTM25'] - profile[i-1]['alts']['DTM25']
+        # calculate the distance between two coordinates
+        dist_difference = profile[i]['dist'] - profile[i-1]['dist']
+        # calculate the slope angle between two coordinates
+        slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
+        # calculate the slope factor between two coordinates
+        # max. 3.43 grad -> dort gefälle über steigung priorisieren
+        if slope_angle > 3.43:
+            slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
+        elif 0 < slope_angle <= 3.43:
+            slope_factor = dist_difference * math.tan(math.radians(1.1*slope_angle))
+        elif -3.43 <= slope_angle <= 0:
+            slope_factor = dist_difference * math.tan(math.radians(slope_angle))
+        elif slope_angle < -3.43:
+            slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
+        # calculate the resistance between two coordinates
+        resistance = abs(dist_difference * slope_factor)
+        # sum up the resistance
+        total_resistance += resistance
+    # multiply the total resistance by the total distance
+    #total_resistance *= total_distance
+    return total_resistance
 
 # ======================================= Function calculate weight ============================================== #
 def weight_routes(profile):
     weighted_routes = []
 
     for index, profile, total_distance in profile:
-        total_resistance = 0
+        #total_resistance = 0
         if profile is None:
             total_resistance = None
         else:
-            for i in range(1, len(profile)):
-                height_difference = profile[i]['alts']['DTM25'] - profile[i-1]['alts']['DTM25']
-                dist_difference = profile[i]['dist'] - profile[i-1]['dist']
-                # calculate the slope angle between two coordinates of a leg
-                slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
-                # calculate the slope factor between two coordinates of a leg
-                # max. 4 grad -> dort gefälle über steigung priorisieren
-                if slope_angle > 3.43:
-                    slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
-                elif 0 < slope_angle <= 3.43:
-                    slope_factor = dist_difference * math.tan(math.radians(1.1*slope_angle))
-                elif -3.43 <= slope_angle <= 0:
-                    slope_factor = dist_difference * math.tan(math.radians(slope_angle))
-                elif slope_angle < -3.43:
-                    slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
-                # calculate the resistance between two coordinates of a leg
-                resistance = abs(dist_difference * slope_factor)
-                total_resistance += resistance
+            total_resistance = calculate_resistance(profile)
+            # for i in range(1, len(profile)):
+            #     height_difference = profile[i]['alts']['DTM25'] - profile[i-1]['alts']['DTM25']
+            #     dist_difference = profile[i]['dist'] - profile[i-1]['dist']
+            #     # calculate the slope angle between two coordinates of a leg
+            #     slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
+            #     # calculate the slope factor between two coordinates of a leg
+            #     # max. 4 grad -> dort gefälle über steigung priorisieren
+            #     if slope_angle > 3.43:
+            #         slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
+            #     elif 0 < slope_angle <= 3.43:
+            #         slope_factor = dist_difference * math.tan(math.radians(1.1*slope_angle))
+            #     elif -3.43 <= slope_angle <= 0:
+            #         slope_factor = dist_difference * math.tan(math.radians(slope_angle))
+            #     elif slope_angle < -3.43:
+            #         slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
+            #     # calculate the resistance between two coordinates of a leg
+            #     resistance = abs(dist_difference * slope_factor)
+            #     total_resistance += resistance
             #total_resistance *= total_distance  # multiply the total resistance by the total distance
         weighted_routes.append((index, total_resistance))
     
