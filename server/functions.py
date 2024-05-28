@@ -6,12 +6,18 @@ from fastapi import HTTPException
 import math
 import xml.etree.ElementTree as ET
 
+# ======================================= Function calculate distance =========================================== # 
+# calculate distance from position to stop place
+# def calculate_distance(lon, lat, stop_place):
+#     geopos_stopplace = stop_place['geopos_haltestelle']
+#     return ((geopos_stopplace['lon'] - lon)**2 + (geopos_stopplace['lat'] - lat)**2)**0.5
+
 # ======================================= Function API request stop places ======================================= # 
 # get stop places within a certain distance of the given coordinates
-def get_stop_places(lat, lon, distance=500):
+def get_stop_places(lon, lat, distance=500):
     params = {
-        'where': f"within_distance(geopos_haltestelle, geom'Point({lat} {lon})',{distance}m)",
-        'limit': 5
+        'where': f"within_distance(geopos_haltestelle, geom'Point({lon} {lat})',{distance}m)",
+        #'limit': 20
     }
 
     params_str = urllib.parse.urlencode(params)
@@ -26,8 +32,14 @@ def get_stop_places(lat, lon, distance=500):
         valid_stop_places = [stop_place for stop_place in stop_places['results'] if stop_place['meansoftransport'] is not None]
 
         if not valid_stop_places:
-            raise Exception(f"No valid stop places found within {distance} m of coordinates {lat}, {lon}")
+            raise Exception(f"No valid stop places found within {distance} m of coordinates {lon}, {lat}")
         
+        # Calculate the distance to each stop place and sort the list
+        # for stop_place in valid_stop_places:
+        #     dist = calculate_distance(lon, lat, stop_place)
+        #     print(f'dist: {dist}')
+        #valid_stop_places.sort(key=lambda stop_place: math.sqrt((stop_place['fields']['geopos_haltestelle'][0] - lat)**2 + (stop_place['fields']['geopos_haltestelle'][1] - lon)**2))
+
         return valid_stop_places
     else:
         print(f'Error: Failed to retrieve stop places for coordinates {lat}, {lon}')
@@ -295,7 +307,15 @@ def weight_routes(profile):
                 # calculate the slope angle between two coordinates of a leg
                 slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
                 # calculate the slope factor between two coordinates of a leg
-                slope_factor = dist_difference * math.tan(math.radians(1.1*slope_angle))
+                # max. 4 grad -> dort gefälle über steigung priorisieren
+                if slope_angle > 3.43:
+                    slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
+                elif 0 < slope_angle <= 3.43:
+                    slope_factor = dist_difference * math.tan(math.radians(1.1*slope_angle))
+                elif -3.43 <= slope_angle <= 0:
+                    slope_factor = dist_difference * math.tan(math.radians(slope_angle))
+                elif slope_angle < -3.43:
+                    slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
                 # calculate the resistance between two coordinates of a leg
                 resistance = abs(dist_difference * slope_factor)
                 total_resistance += resistance

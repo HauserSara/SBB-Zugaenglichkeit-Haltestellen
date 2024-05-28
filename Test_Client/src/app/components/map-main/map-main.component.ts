@@ -96,10 +96,10 @@ export class MapMain implements OnDestroy, AfterViewInit {
 
     const url = 'http://127.0.0.1:8000/route_journeymaps/';
     const body = {
-      "lat1": this.markers[0].getLngLat().lng,
-      "lon1": this.markers[0].getLngLat().lat,
-      "lat2": this.markers[1].getLngLat().lng,
-      "lon2": this.markers[1].getLngLat().lat,
+      "lat1": this.markers[0].getLngLat().lat,
+      "lon1": this.markers[0].getLngLat().lng,
+      "lat2": this.markers[1].getLngLat().lat,
+      "lon2": this.markers[1].getLngLat().lng,
       "time": "12:00"
     };
     const headers = {

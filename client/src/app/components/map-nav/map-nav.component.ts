@@ -101,7 +101,6 @@ export class MapNav implements OnInit, OnDestroy, AfterViewInit {
       'Content-Type': 'application/json',
       'User-Agent': 'sbb-a11y-app'
     };
-
     console.log(`Sending POST request to ${url} with body:`, body);
 
     this.http.post<any>(url, body, { headers }).subscribe({

@@ -42,8 +42,8 @@ async def create_route_jm(coordinates: Coordinates):
     # get stop places within a certain distance of the given coordinates
     start_time = time.time()
     try:
-        stop_places_start = get_stop_places(coordinates.lat1, coordinates.lon1)
-        stop_places_dest = get_stop_places(coordinates.lat2, coordinates.lon2)
+        stop_places_start = get_stop_places(coordinates.lon1, coordinates.lat1)
+        stop_places_dest = get_stop_places(coordinates.lon2, coordinates.lat2)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     print(f"Time taken for get_stop_places: {time.time() - start_time} seconds")
@@ -283,6 +283,7 @@ async def create_route_jm(coordinates: Coordinates):
 
 @app.post("/route_ojp/")
 async def create_route_ojp(coordinates: Coordinates):
+    print(coordinates)
     start_request = time.time()
 
     start_time = time.time()
