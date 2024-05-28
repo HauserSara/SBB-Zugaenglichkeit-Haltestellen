@@ -1,8 +1,6 @@
 import { Component, OnDestroy, AfterViewInit } from '@angular/core';
 import maplibregl, { Map, Marker, LngLat, GeoJSONSource, AttributionControl } from 'maplibre-gl';
 import { HttpClient } from '@angular/common/http';
-import { Feature, Geometry } from 'geojson';
-
 
 declare global {
   interface Window { JM_API_KEY: string; }
@@ -22,10 +20,10 @@ export class MapMain implements OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.map = new Map({
-      container: 'map-main', // container ID
-      style: `https://journey-maps-tiles.geocdn.sbb.ch/styles/base_bright_v2/style.json?api_key=${this.apiKey}`, // your MapTiler style URL
-      center: [8.2275, 46.8182], // starting position [lng, lat]
-      zoom: 7.5, // starting zoom
+      container: 'map-main', 
+      style: `https://journey-maps-tiles.geocdn.sbb.ch/styles/base_bright_v2/style.json?api_key=${this.apiKey}`,
+      center: [8.2275, 46.8182], 
+      zoom: 7.5, 
       attributionControl: false
     });
 
@@ -40,38 +38,36 @@ export class MapMain implements OnDestroy, AfterViewInit {
   }
 
   private initMap(): void {
-    
     this.map.on('load', () => {
-      this.map.on('click', (e) => {
-        this.handleMapClick(e.lngLat);
-      });
-      this.map.addSource('swisstopo-height', {
-        'type': 'raster',
-        'tiles': [
-          'https://wms.geo.admin.ch/?service=WMS&request=GetMap&layers=ch.swisstopo.pixelkarte-farbe&styles=default&format=image/png&transparent=true&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'
-        ],
-        'tileSize': 256
-      });
-      
-      this.map.addLayer({
-        'id': 'swisstopo-height-layer',
-        'type': 'raster',
-        'source': 'swisstopo-height',
-        'paint': {
-          // Set the opacity of the raster layer to 0.4, which corresponds to 60% transparency
-          'raster-opacity': 0.4
-        }
-      });
+      this.map.on('click', (e) => this.handleMapClick(e.lngLat));
+      this.addBaseLayer();
     });
-    const attributionControl = new AttributionControl({
-      compact: true
+  }
+
+  private addBaseLayer(): void {
+    this.map.addSource('swisstopo-height', {
+      'type': 'raster',
+      'tiles': [
+        'https://wms.geo.admin.ch/?service=WMS&request=GetMap&layers=ch.swisstopo.pixelkarte-farbe&styles=default&format=image/png&transparent=true&version=1.3.0&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}'
+      ],
+      'tileSize': 256
     });
+
+    this.map.addLayer({
+      'id': 'swisstopo-height-layer',
+      'type': 'raster',
+      'source': 'swisstopo-height',
+      'paint': { 'raster-opacity': 0.4 }
+    });
+
+    const attributionControl = new AttributionControl({compact: true});
     this.map.addControl(attributionControl, 'top-left');
   }
 
   private handleMapClick(lngLat: LngLat): void {
     if (this.markers.length >= 2) {
       this.clearMarkers();
+      this.clearRoutes();
     }
 
     this.addMarker(lngLat);
@@ -95,7 +91,7 @@ export class MapMain implements OnDestroy, AfterViewInit {
 
   getRoute(): void {
     if (this.markers.length < 2) {
-      return; // Ensure there are exactly two markers
+      return;
     }
 
     const url = 'http://127.0.0.1:8000/route_journeymaps/';
@@ -111,8 +107,6 @@ export class MapMain implements OnDestroy, AfterViewInit {
       'User-Agent': 'sbb-a11y-app'
     };
 
-    console.log(`Sending POST request to ${url} with body:`, body);
-
     this.http.post<any>(url, body, { headers }).subscribe({
       next: (geojsonData) => this.displayGeoJSON(geojsonData),
       error: (error) => console.error("POST call in error", error.error),
@@ -121,50 +115,53 @@ export class MapMain implements OnDestroy, AfterViewInit {
   }
 
   displayGeoJSON(responseData: any[]): void {
-    console.log("Processing GeoJSON Data:", responseData);
-    responseData.forEach((item) => {
-        const geoJSONData = item[1]; // Assuming the GeoJSON object is at index 1
-        console.log("GeoJSON FeatureCollection:", geoJSONData);
-        const layerColor = '#FF0000';
-        const sourceId = `route-${geoJSONData.features[0].properties.type}-${item[0]}`;
-        const layerId = `route-layer-${geoJSONData.features[0].properties.type}-${item[0]}`;
+    this.clearRoutes(); // Clear existing routes before adding new ones
+    responseData.forEach((item, index) => {
+      const geoJSONData = item; // Directly using the item as GeoJSON data
+      const sourceId = `route-${index}`;
+      const layerId = `route-layer-${index}`;
 
-        if (!this.map.getSource(sourceId)) {
-            this.map.addSource(sourceId, {
-                type: 'geojson',
-                data: geoJSONData
-            });
+      if (!this.map.getSource(sourceId)) {
+        this.map.addSource(sourceId, {
+          type: 'geojson',
+          data: geoJSONData
+        });
 
-            this.map.addLayer({
-                id: layerId,
-                type: 'line',
-                source: sourceId,
-                layout: {},
-                paint: {
-                    'line-color': layerColor,
-                    'line-width': 5
-                }
-            });
-        } else {
-            // Update the source data if it already exists
-            (this.map.getSource(sourceId) as GeoJSONSource).setData(geoJSONData);
+        this.map.addLayer({
+          id: layerId,
+          type: 'line',
+          source: sourceId,
+          layout: {},
+          paint: {
+            'line-color': '#FF0000',
+            'line-width': 5
+          }
+        });
+
+        if (index === 0 && geoJSONData.bbox) { // Auto-zoom to the first route
+          this.map.fitBounds(geoJSONData.bbox, {padding: 20});
         }
+      }
     });
-}
-
-  
+  }
 
   clearMarkers(): void {
     this.markers.forEach(marker => marker.remove());
     this.markers = [];
-    this.clearRoutes();
   }
 
   clearRoutes(): void {
-    this.map.getStyle().layers?.forEach(layer => {
-      if (layer.id.includes('route-layer-')) {
-        this.map.removeLayer(layer.id)
-      }
-    });
+    if (this.map && this.map.getStyle()) {
+      this.map.getStyle().layers.forEach(layer => {
+        if (layer.id.startsWith('route-layer-') && this.map.getLayer(layer.id)) {
+          this.map.removeLayer(layer.id);
+        }
+      });
+      Object.keys(this.map.getStyle().sources).forEach(sourceId => {
+        if (sourceId.startsWith('route-') && this.map.getSource(sourceId)) {
+          this.map.removeSource(sourceId);
+        }
+      });
+    }
   }
 }
