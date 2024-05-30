@@ -47,9 +47,10 @@ async def create_route_jm(coordinates: Coordinates):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     print(f"Time taken for get_stop_places: {time.time() - start_time} seconds")
+    # add index to the stop places for identification
     indexed_stop_places_start = [(index, stop_place) for index, stop_place in enumerate(stop_places_start)]
     indexed_stop_places_dest = [(index, stop_place) for index, stop_place in enumerate(stop_places_dest)]
-   # get the didok-numbers of the stop places
+    # get the didok-numbers of the stop places
     start_time = time.time()
     didok_number_start = [(index, entry['number']) for index, entry in indexed_stop_places_start]
     didok_number_dest = [(index, entry['number']) for index, entry in indexed_stop_places_dest]
@@ -272,6 +273,8 @@ async def create_route_jm(coordinates: Coordinates):
     # print(route_start)
     # print(route_dest)
 
+    print(f"Time taken to return routes Journey-Maps: {time.time() - start_request} seconds")
+
     # Call the get_journey function with the provided time and the calculated numbers
     didok_start = didok_number_start[start_route_weights[0]]
     didok_dest = didok_number_dest[dest_route_weights[0]]
@@ -280,7 +283,7 @@ async def create_route_jm(coordinates: Coordinates):
     print(f'{didok_start[1]}, {start_name}, {didok_dest[1]}, {dest_name}')
     journey = get_pt_routes_ojp(didok_start[1], start_name, didok_dest[1], dest_name)
 
-    print(f"Time taken to return routes Journey-Maps: {time.time() - start_request} seconds")
+  
     return route_start, route_dest
 
 @app.post("/route_ojp/")
@@ -405,7 +408,7 @@ async def create_route_ojp(coordinates: Coordinates):
             print(f'mean_slope: {calculated_resistance[1]}')
             print(f'max_slope: {calculated_resistance[2]}')
             print(f'total_resistance: {total_resistance}')
-            print(f'leg_infos: {leg_infos}')
+            #print(f'leg_infos: {leg_infos}')
             # total_resistance = 0
             # #get total distance of a leg (last entry in leg_infos)
             # total_distance = leg_infos[-1]['dist']
