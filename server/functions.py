@@ -295,36 +295,28 @@ def calculate_height_meters(height_profiles):
 def calculate_resistance(profile):
     total_resistance = 0
     slope_parts = []
+    
     for i in range(1, len(profile)):
         # calculate the height difference between two coordinates
         height_difference = profile[i]['alts']['DTM25'] - profile[i-1]['alts']['DTM25']
         # calculate the distance between two coordinates
         dist_difference = profile[i]['dist'] - profile[i-1]['dist']
         # calculate the slope in %
-        slope_angle = (height_difference / dist_difference) *100 if dist_difference != 0 else 0
-        # calculate the slope factor between two coordinates
-        # max. 3.43 grad -> dort gefälle über steigung priorisieren
+        slope = (height_difference / dist_difference) * 100 if dist_difference != 0 else 0
         
-        if slope_angle >= 10:
-            slope_factor = dist_difference * slope_angle * 4.0
-        elif 6 <= slope_angle < 10:
-            slope_factor = dist_difference * slope_angle * 2.5
-        elif 1 <= slope_angle < 6:
-            slope_factor = dist_difference * slope_angle * 1.3
-        elif -1 <= slope_angle < 1:
-            slope_factor = dist_difference * slope_angle * 1.0
-        elif -6 <= slope_angle < -1:
-            slope_factor = dist_difference * slope_angle * 1.0  
-        elif -10 <= slope_angle <= -6:
-            slope_factor = dist_difference * slope_angle * 2.5
-        elif slope_angle < -10:
-            slope_factor = dist_difference * slope_angle * 4.0
+        # calculate the slope factor between two coordinates        
+        if slope > 6 or slope < -6:
+            slope_factor = dist_difference * slope * 5.0
+        elif 1 < slope <= 6 or -6 <= slope < -1:
+            slope_factor = dist_difference * slope * (slope/10 + 1)
+        elif -1 <= slope <= 1:
+            slope_factor = dist_difference * slope
 
         # calculate the resistance between two coordinates
         resistance = abs(dist_difference * slope_factor)
         # sum up the resistance
         total_resistance += resistance
-        slope_parts.append((slope_angle))
+        slope_parts.append((slope))
         mean_slope = statistics.median(slope_parts)
         max_slope = max(slope_parts)
 
