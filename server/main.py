@@ -42,8 +42,8 @@ async def create_route_jm(coordinates: Coordinates):
     # get stop places within a certain distance of the given coordinates
     start_time = time.time()
     try:
-        stop_places_start = get_stop_places(coordinates.lat1, coordinates.lon1)
-        stop_places_dest = get_stop_places(coordinates.lat2, coordinates.lon2)
+        stop_places_start = get_stop_places(coordinates.lon1, coordinates.lat1)
+        stop_places_dest = get_stop_places(coordinates.lon2, coordinates.lat2)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     print(f"Time taken for get_stop_places: {time.time() - start_time} seconds")
@@ -139,54 +139,54 @@ async def create_route_jm(coordinates: Coordinates):
 
     ######################## MAP ########################
     # Define a list of colors
-    # colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred',
-    #         'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue',
-    #         'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen',
-    #         'gray', 'black', 'lightgray']
+    colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred',
+            'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue',
+            'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen',
+            'gray', 'black', 'lightgray']
 
-    # color_cycle = itertools.cycle(colors)  # Create an infinite iterator of colors
+    color_cycle = itertools.cycle(colors)  # Create an infinite iterator of colors
 
-    # # Create a map centered at the first coordinate of the first route
-    # first_coordinate = coords_routes_start[0][1][0]
-    # m = folium.Map(location=[float(first_coordinate[1]), float(first_coordinate[0])], zoom_start=14)
+    # Create a map centered at the first coordinate of the first route
+    first_coordinate = coords_routes_start[0][1][0]
+    m = folium.Map(location=[float(first_coordinate[1]), float(first_coordinate[0])], zoom_start=14)
 
-    # # Iterate over the start routes
-    # for index, route, distance in coords_routes_start:
-    #     # Get a new color for the current route
-    #     color = next(color_cycle)
+    # Iterate over the start routes
+    for index, route, distance in coords_routes_start:
+        # Get a new color for the current route
+        color = next(color_cycle)
 
-    #     # Create a feature group for this route
-    #     feature_group = folium.FeatureGroup(name=f'Start Route {index}')
+        # Create a feature group for this route
+        feature_group = folium.FeatureGroup(name=f'Start Route {index}')
 
-    #     # Create a polyline for the route
-    #     polyline = folium.PolyLine([(float(coord[1]), float(coord[0])) for coord in route], color=color, weight=2.5, opacity=1)
-    #     feature_group.add_child(polyline)
-    #     m.add_child(feature_group)
+        # Create a polyline for the route
+        polyline = folium.PolyLine([(float(coord[1]), float(coord[0])) for coord in route], color=color, weight=2.5, opacity=1)
+        feature_group.add_child(polyline)
+        m.add_child(feature_group)
 
-    # # Reset the color cycle for the destination routes
-    # color_cycle = itertools.cycle(colors)
+    # Reset the color cycle for the destination routes
+    color_cycle = itertools.cycle(colors)
 
-    # # Iterate over the destination routes
-    # for index, route, distance in coords_routes_dest:
-    #     # Get a new color for the current route
-    #     color = next(color_cycle)
+    # Iterate over the destination routes
+    for index, route, distance in coords_routes_dest:
+        # Get a new color for the current route
+        color = next(color_cycle)
 
-    #     # Create a feature group for this route
-    #     feature_group = folium.FeatureGroup(name=f'Dest Route {index}')
+        # Create a feature group for this route
+        feature_group = folium.FeatureGroup(name=f'Dest Route {index}')
 
-    #     # Create a polyline for the route
-    #     polyline = folium.PolyLine([(float(coord[1]), float(coord[0])) for coord in route], color=color, weight=2.5, opacity=1)
-    #     feature_group.add_child(polyline)
-    #     m.add_child(feature_group)
+        # Create a polyline for the route
+        polyline = folium.PolyLine([(float(coord[1]), float(coord[0])) for coord in route], color=color, weight=2.5, opacity=1)
+        feature_group.add_child(polyline)
+        m.add_child(feature_group)
 
-    # # Add layer control to the map
-    # folium.LayerControl().add_to(m)
+    # Add layer control to the map
+    folium.LayerControl().add_to(m)
 
-    # # Save the map to an HTML file
-    # maps_dir = 'data/maps'
-    # os.makedirs(maps_dir, exist_ok=True)
-    # map_file = os.path.join(maps_dir, 'map_all_routes.html')
-    # m.save(map_file)
+    # Save the map to an HTML file
+    maps_dir = 'data/maps'
+    os.makedirs(maps_dir, exist_ok=True)
+    map_file = os.path.join(maps_dir, 'map_all_routes.html')
+    m.save(map_file)
 
     ##########################################################
 
@@ -457,49 +457,49 @@ async def create_route_ojp(coordinates: Coordinates):
 
     # ################################## Map ##################################
     # Directory to save the maps
-    # maps_dir = 'data/maps'
-    # os.makedirs(maps_dir, exist_ok=True)
+    maps_dir = 'data/maps'
+    os.makedirs(maps_dir, exist_ok=True)
 
-    # # Define a list of colors
-    # colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred',
-    #         'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue',
-    #         'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen',
-    #         'gray', 'black', 'lightgray']
+    # Define a list of colors
+    colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred',
+            'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue',
+            'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen',
+            'gray', 'black', 'lightgray']
 
-    # color_cycle = itertools.cycle(colors)  # Create an infinite iterator of colors
+    color_cycle = itertools.cycle(colors)  # Create an infinite iterator of colors
 
-    # # Create a map centered at the first coordinate of the first leg of the first trip result
-    # first_result_id, first_result_legs = list(result_leg_ids.items())[0]
-    # first_leg_id, first_leg_info = list(first_result_legs.items())[0]
-    # first_coordinate = first_leg_info['coordinates'][0]
-    # m = folium.Map(location=[float(first_coordinate[0]), float(first_coordinate[1])], zoom_start=14)
+    # Create a map centered at the first coordinate of the first leg of the first trip result
+    first_result_id, first_result_legs = list(result_leg_ids.items())[0]
+    first_leg_id, first_leg_info = list(first_result_legs.items())[0]
+    first_coordinate = first_leg_info['coordinates'][0]
+    m = folium.Map(location=[float(first_coordinate[0]), float(first_coordinate[1])], zoom_start=14)
 
-    # print("meintest")
-    # print(result_leg_ids)
+    print("meintest")
+    print(result_leg_ids)
 
-    # # Iterate over the trip results
-    # for result_id, result_legs in result_leg_ids.items():
-    #     # Get a new color for the current trip result
-    #     color = next(color_cycle)
+    # Iterate over the trip results
+    for result_id, result_legs in result_leg_ids.items():
+        # Get a new color for the current trip result
+        color = next(color_cycle)
 
-    #     # Create a feature group for this trip result
-    #     feature_group = folium.FeatureGroup(name=result_id)
+        # Create a feature group for this trip result
+        feature_group = folium.FeatureGroup(name=result_id)
 
-    #     # Iterate over the legs of the current trip result
-    #     for leg_id, leg_info in result_legs.items():
-    #         # Check if coordinates is not empty and create a polyline
-    #         if leg_info['coordinates']:
-    #             polyline = folium.PolyLine(leg_info['coordinates'], color=color, weight=2.5, opacity=1)
-    #             feature_group.add_child(polyline)
+        # Iterate over the legs of the current trip result
+        for leg_id, leg_info in result_legs.items():
+            # Check if coordinates is not empty and create a polyline
+            if leg_info['coordinates']:
+                polyline = folium.PolyLine(leg_info['coordinates'], color=color, weight=2.5, opacity=1)
+                feature_group.add_child(polyline)
 
-    #     m.add_child(feature_group)
+        m.add_child(feature_group)
 
-    # # Add layer control to the map
-    # folium.LayerControl().add_to(m)
+    # Add layer control to the map
+    folium.LayerControl().add_to(m)
 
-    # # Save the map to an HTML file
-    # map_file = os.path.join(maps_dir, 'map_all_routes.html')
-    # m.save(map_file)
+    # Save the map to an HTML file
+    map_file = os.path.join(maps_dir, 'map_all_routes.html')
+    m.save(map_file)
 
     print(f"Time taken to return routes OJP: {time.time() - start_request} seconds")
     return route

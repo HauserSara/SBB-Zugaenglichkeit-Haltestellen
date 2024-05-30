@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 
 # ======================================= Function API request stop places ======================================= # 
 # get stop places within a certain distance of the given coordinates
-def get_stop_places(lon, lat, distance=500):
+def get_stop_places(lon, lat, distance=1000):
     params = {
         'where': f"within_distance(geopos_haltestelle, geom'Point({lon} {lat})',{distance}m)",
     }
