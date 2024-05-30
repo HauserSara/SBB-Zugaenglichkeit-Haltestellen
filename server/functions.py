@@ -320,8 +320,6 @@ def calculate_resistance(profile):
         mean_slope = statistics.median(slope_parts)
         max_slope = max(slope_parts)
 
-    # multiply the total resistance by the total distance
-    #total_resistance *= total_distance
     return total_resistance, mean_slope, max_slope
 
 # ======================================= Function calculate weight ============================================== #
