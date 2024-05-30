@@ -47,9 +47,10 @@ async def create_route_jm(coordinates: Coordinates):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     print(f"Time taken for get_stop_places: {time.time() - start_time} seconds")
+    # add index to the stop places for identification
     indexed_stop_places_start = [(index, stop_place) for index, stop_place in enumerate(stop_places_start)]
     indexed_stop_places_dest = [(index, stop_place) for index, stop_place in enumerate(stop_places_dest)]
-   # get the didok-numbers of the stop places
+    # get the didok-numbers of the stop places
     start_time = time.time()
     didok_number_start = [(index, entry['number']) for index, entry in indexed_stop_places_start]
     didok_number_dest = [(index, entry['number']) for index, entry in indexed_stop_places_dest]
