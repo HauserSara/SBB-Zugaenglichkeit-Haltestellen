@@ -145,6 +145,15 @@ export class MapMain implements OnDestroy, AfterViewInit {
     });
   }
 
+  updateOpacity(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const opacity = parseFloat(input.value);
+    const layer = this.map.getLayer('swisstopo-height-layer');
+    if (layer) {
+      this.map.setPaintProperty('swisstopo-height-layer', 'raster-opacity', opacity);
+    }
+  }
+
   clearMarkers(): void {
     this.markers.forEach(marker => marker.remove());
     this.markers = [];

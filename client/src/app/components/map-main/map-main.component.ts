@@ -106,7 +106,9 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
         'toilet-icon': 'assets/icons/Toiletten.svg',
         'parking-icon': 'assets/icons/Parkplatz.svg',
         'info-desk-icon': 'assets/icons/Informationsdesk.svg',
-        'ticket-counter-icon': 'assets/icons/Ticket.svg'
+        'ticket-counter-icon': 'assets/icons/Ticket.svg',
+        'reference-point-icon': 'assets/icons/Referenzpunkt.svg',
+        'point': 'assets/icons/Punkt.svg'
       };
 
       Object.entries(icons).forEach(([key, src]) => {
@@ -154,11 +156,21 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
     if (!this.map.getLayer('all_points-layer') && this.map.getSource('all_points')) {
       this.map.addLayer({
         id: 'all_points-layer',
-        type: 'circle',
+        type: 'symbol',
         source: 'all_points',
-        paint: {
-          'circle-radius': 5,
-          'circle-color': '#FF0000'
+        layout: {
+          'icon-image': [
+            'case',
+            ['==', ['get', 'Bezeichnung'], 'Referenzpunkt'],
+            'reference-point-icon', 
+            'point'
+          ],
+          'icon-size': [
+            'case',
+            ['==', ['get', 'Bezeichnung'], 'Referenzpunkt'],
+            0.1,
+            0.1 
+          ]
         }
       });
 
@@ -235,10 +247,16 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
       if (connection) {
         const coordinates = this.getMidpointCoordinates(this.firstClickedPoint, this.secondClickedPoint);
         if (coordinates) {
+          const formattedInfo = connection.info.split(',').map(info => {
+            const [key, value] = info.split(':').map(part => part.trim());
+            return `<strong>${key}</strong>: ${value}`;
+          }).join('<br>');
+  
           this.popup = new Popup()
             .setLngLat(coordinates)
-            .setHTML(`<strong>Connection Info:</strong><br>${connection.info}`)
+            .setHTML(`<p style="text-decoration: underline;">Connection Info</p>${formattedInfo}`)
             .addTo(this.map);
+  
           this.popup.on('close', () => {
             this.resetConnection();
             this.resetFilter();
@@ -249,6 +267,7 @@ export class MapMain implements OnDestroy, AfterViewInit, OnInit {
       }
     }
   }
+  
 
   private drawConnectionLine(): void {
     if (this.firstClickedPoint && this.secondClickedPoint) {
