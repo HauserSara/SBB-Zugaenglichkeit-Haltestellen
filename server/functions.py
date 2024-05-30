@@ -6,22 +6,17 @@ from fastapi import HTTPException
 import statistics
 import xml.etree.ElementTree as ET
 
-# ======================================= Function calculate distance =========================================== # 
-# calculate distance from position to stop place
-# def calculate_distance(lon, lat, stop_place):
-#     geopos_stopplace = stop_place['geopos_haltestelle']
-#     return ((geopos_stopplace['lon'] - lon)**2 + (geopos_stopplace['lat'] - lat)**2)**0.5
-
 # ======================================= Function API request stop places ======================================= # 
 # get stop places within a certain distance of the given coordinates
 def get_stop_places(lon, lat, distance=500):
     params = {
         'where': f"within_distance(geopos_haltestelle, geom'Point({lon} {lat})',{distance}m)",
-        #'limit': 20
     }
 
+    # encode the parameters as a URL string
     params_str = urllib.parse.urlencode(params)
 
+    # make the API request
     conn = http.client.HTTPSConnection('data.sbb.ch', 443)
     conn.request('GET', '/api/explore/v2.1/catalog/datasets/haltestelle-haltekante/records?' + params_str)
 
@@ -33,14 +28,9 @@ def get_stop_places(lon, lat, distance=500):
 
         if not valid_stop_places:
             raise Exception(f"No valid stop places found within {distance} m of coordinates {lon}, {lat}")
-        
-        # Calculate the distance to each stop place and sort the list
-        # for stop_place in valid_stop_places:
-        #     dist = calculate_distance(lon, lat, stop_place)
-        #     print(f'dist: {dist}')
-        #valid_stop_places.sort(key=lambda stop_place: math.sqrt((stop_place['fields']['geopos_haltestelle'][0] - lat)**2 + (stop_place['fields']['geopos_haltestelle'][1] - lon)**2))
 
         return valid_stop_places
+    
     else:
         print(f'Error: Failed to retrieve stop places for coordinates {lat}, {lon}')
         return None
@@ -72,8 +62,6 @@ def get_route_jm(lat, lon, stop_place, type):
     url = 'https://journey-maps.api.sbb.ch/v1/transfer'
     response = session.get(url, params=params)
 
-    #print("Final request URL: ", response.url)
-
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError:
@@ -87,14 +75,17 @@ def get_route_jm(lat, lon, stop_place, type):
     return route
 
 # ======================================= Function OJP request routing =========================================== #
+# get the route between two coordinates
 def get_routes_ojp(lon1, lat1, lon2, lat2):
     url = "https://api.opentransportdata.swiss/ojp2020"
 
+    # set the headers of the request
     headers = {
         "Content-Type": "application/xml",
         "Authorization": "Bearer eyJvcmciOiI2NDA2NTFhNTIyZmEwNTAwMDEyOWJiZTEiLCJpZCI6Ijc4MDlhMzhlOWUyMzQzODM4YmJjNWIwNjQxN2Y0NTk3IiwiaCI6Im11cm11cjEyOCJ9"
     }
 
+    # set the body of the request
     body = f"""
     <?xml version="1.0" encoding="utf-8"?>
     <OJP xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.siri.org.uk/siri" version="1.0" xmlns:ojp="http://www.vdv.de/ojp" xsi:schemaLocation="http://www.siri.org.uk/siri ../ojp-xsd-v1.0/OJP.xsd">
@@ -149,9 +140,6 @@ def get_routes_ojp(lon1, lat1, lon2, lat2):
 
     response = requests.post(url, headers=headers, data=body)
 
-    # ADD ERROR HANDLING
-    # ...
-
     print("Status code:", response.status_code)
 
     # write response to xml
@@ -203,21 +191,12 @@ def get_height_profile_jm(index, route, distance):
     # Convert the geom dictionary to a JSON string
     geom_json = json.dumps(geom)
 
-    # define the number of points to be returned by the API
-    if distance > 10:
-        nb_points = int(distance/5)
-    else:
-        nb_points = int(distance)
-
     # Include the JSON string in the URL
-    #data = {'geom': geom_json, 'sr': 2056, 'nb_points': nb_points}
     data = {'geom': geom_json, 'sr': 2056}
     response = requests.post('https://api3.geo.admin.ch/rest/services/profile.json', data=data)
 
     if response.status_code == 200:
         profile = response.json()
-        # with open(f'data/route_{index}_profile.geojson', 'w') as f:
-        #     json.dump(profile, f)
         return profile
     else:
         print(f'Error: Failed to retrieve height profile for route {index}')
@@ -237,14 +216,11 @@ def get_height_profile_ojp(result_id, leg_id, route):
     geom_json = json.dumps(geom)
 
     # Include the JSON string in the URL
-    #data = {'geom': geom_json, 'sr': 2056, 'nb_points': nb_points}
     data = {'geom': geom_json, 'sr': 2056}
     response = requests.post('https://api3.geo.admin.ch/rest/services/profile.json', data=data)
 
     if response.status_code == 200:
         profile = response.json()
-        # with open(f'data/route_{index}_profile.geojson', 'w') as f:
-        #     json.dump(profile, f)
         return profile
     else:
         print(f'Error: Failed to retrieve height profile for route {result_id}, {leg_id}')
@@ -254,18 +230,6 @@ def get_height_profile_ojp(result_id, leg_id, route):
         return None
     
 # ======================================= Function calculate height meters ======================================= #
-# def calculate_slope(point1, point2):
-#     # Höhendifferenz zwischen den beiden Punkten
-#     delta_height = point2['alts']['COMB'] - point1['alts']['COMB']
-
-#     # Horizontale Distanz zwischen den beiden Punkten
-#     delta_distance = point2['dist'] - point1['dist']
-
-#     # Berechnung des Höhenwinkels in Grad
-#     slope = math.degrees(math.atan(delta_height / delta_distance))
-
-#     return slope
-
 def calculate_height_meters(height_profiles):
     height_meters = []
 
