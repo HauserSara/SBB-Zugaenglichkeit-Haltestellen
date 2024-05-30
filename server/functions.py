@@ -3,7 +3,7 @@ import http.client
 import urllib.parse
 import json
 from fastapi import HTTPException
-import math
+import statistics
 import xml.etree.ElementTree as ET
 
 # ======================================= Function calculate distance =========================================== # 
@@ -254,17 +254,17 @@ def get_height_profile_ojp(result_id, leg_id, route):
         return None
     
 # ======================================= Function calculate height meters ======================================= #
-def calculate_slope(point1, point2):
-    # Höhendifferenz zwischen den beiden Punkten
-    delta_height = point2['alts']['COMB'] - point1['alts']['COMB']
+# def calculate_slope(point1, point2):
+#     # Höhendifferenz zwischen den beiden Punkten
+#     delta_height = point2['alts']['COMB'] - point1['alts']['COMB']
 
-    # Horizontale Distanz zwischen den beiden Punkten
-    delta_distance = point2['dist'] - point1['dist']
+#     # Horizontale Distanz zwischen den beiden Punkten
+#     delta_distance = point2['dist'] - point1['dist']
 
-    # Berechnung des Höhenwinkels in Grad
-    slope = math.degrees(math.atan(delta_height / delta_distance))
+#     # Berechnung des Höhenwinkels in Grad
+#     slope = math.degrees(math.atan(delta_height / delta_distance))
 
-    return slope
+#     return slope
 
 def calculate_height_meters(height_profiles):
     height_meters = []
@@ -294,30 +294,43 @@ def calculate_height_meters(height_profiles):
 # ======================================= Function calculate resistance ========================================== #
 def calculate_resistance(profile):
     total_resistance = 0
+    slope_parts = []
     for i in range(1, len(profile)):
         # calculate the height difference between two coordinates
         height_difference = profile[i]['alts']['DTM25'] - profile[i-1]['alts']['DTM25']
         # calculate the distance between two coordinates
         dist_difference = profile[i]['dist'] - profile[i-1]['dist']
-        # calculate the slope angle between two coordinates
-        slope_angle = math.degrees(math.atan(height_difference / dist_difference)) if dist_difference != 0 else 0
+        # calculate the slope in %
+        slope_angle = (height_difference / dist_difference) *100 if dist_difference != 0 else 0
         # calculate the slope factor between two coordinates
         # max. 3.43 grad -> dort gefälle über steigung priorisieren
-        if slope_angle > 3.43:
-            slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
-        elif 0 < slope_angle <= 3.43:
-            slope_factor = dist_difference * math.tan(math.radians(1.1*slope_angle))
-        elif -3.43 <= slope_angle <= 0:
-            slope_factor = dist_difference * math.tan(math.radians(slope_angle))
-        elif slope_angle < -3.43:
-            slope_factor = dist_difference * math.tan(math.radians(1.5*slope_angle))
+        
+        if slope_angle >= 10:
+            slope_factor = dist_difference * slope_angle * 4.0
+        elif 6 <= slope_angle < 10:
+            slope_factor = dist_difference * slope_angle * 2.5
+        elif 1 <= slope_angle < 6:
+            slope_factor = dist_difference * slope_angle * 1.3
+        elif -1 <= slope_angle < 1:
+            slope_factor = dist_difference * slope_angle * 1.0
+        elif -6 <= slope_angle < -1:
+            slope_factor = dist_difference * slope_angle * 1.0  
+        elif -10 <= slope_angle <= -6:
+            slope_factor = dist_difference * slope_angle * 2.5
+        elif slope_angle < -10:
+            slope_factor = dist_difference * slope_angle * 4.0
+
         # calculate the resistance between two coordinates
         resistance = abs(dist_difference * slope_factor)
         # sum up the resistance
         total_resistance += resistance
+        slope_parts.append((slope_angle))
+        mean_slope = statistics.median(slope_parts)
+        max_slope = max(slope_parts)
+
     # multiply the total resistance by the total distance
     #total_resistance *= total_distance
-    return total_resistance
+    return total_resistance, mean_slope, max_slope
 
 # ======================================= Function calculate weight ============================================== #
 def weight_routes(profile):
@@ -328,7 +341,12 @@ def weight_routes(profile):
         if profile is None:
             total_resistance = None
         else:
-            total_resistance = calculate_resistance(profile)
+            calculated_resistance = calculate_resistance(profile)
+            total_resistance = calculated_resistance[0]
+            print(f'mean_slope: {calculated_resistance[1]}')
+            print(f'max_slope: {calculated_resistance[2]}')
+            print(f'total_resistance: {total_resistance}')
+
             # for i in range(1, len(profile)):
             #     height_difference = profile[i]['alts']['DTM25'] - profile[i-1]['alts']['DTM25']
             #     dist_difference = profile[i]['dist'] - profile[i-1]['dist']

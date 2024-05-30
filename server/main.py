@@ -400,7 +400,12 @@ async def create_route_ojp(coordinates: Coordinates):
     # calculate weight for each leg (total distance multiplied with total resistance)
     for result_id, legs in profiles.items():
         for leg_id, leg_infos in legs.items():
-            total_resistance = calculate_resistance(leg_infos)
+            calculated_resistance = calculate_resistance(leg_infos)
+            total_resistance = calculated_resistance[0]
+            print(f'mean_slope: {calculated_resistance[1]}')
+            print(f'max_slope: {calculated_resistance[2]}')
+            print(f'total_resistance: {total_resistance}')
+            print(f'leg_infos: {leg_infos}')
             # total_resistance = 0
             # #get total distance of a leg (last entry in leg_infos)
             # total_distance = leg_infos[-1]['dist']
@@ -465,6 +470,9 @@ async def create_route_ojp(coordinates: Coordinates):
     first_leg_id, first_leg_info = list(first_result_legs.items())[0]
     first_coordinate = first_leg_info['coordinates'][0]
     m = folium.Map(location=[float(first_coordinate[0]), float(first_coordinate[1])], zoom_start=14)
+
+    print("meintest")
+    print(result_leg_ids)
 
     # Iterate over the trip results
     for result_id, result_legs in result_leg_ids.items():
