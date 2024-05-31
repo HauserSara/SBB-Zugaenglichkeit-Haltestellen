@@ -3,10 +3,8 @@ from pyproj import Transformer
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from datetime import datetime
 import time
 import pandas as pd
-import math
 import folium
 import os
 import itertools
