@@ -2,8 +2,9 @@
 
 Server Client Projekt im Rahmen der Bachelor Thesis "SBB interaktive Visualisierung der Zugänglich-keit von Haltestellen" des Institutes Geomatik an der FHNW Muttenz.
 
-Frontend: Angular, MapLibre und SBB Angular
-Backend: FastAPI
+**Frontend:** Angular, MapLibre und SBB Angular
+
+**Backend:** FastAPI
 
 ## Requirements
 - Git
