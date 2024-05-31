@@ -23,6 +23,11 @@ cd client
 npm install
 ```
 
+Starten sie die Applikation mit dem Befehl:
+``` shell
+ng serve
+```
+
 ## Backend installieren
 Öffne ein Terminal und wechsle in den *server* Ordner.
 1. Virtuelle Umgebung für Python erstellen
