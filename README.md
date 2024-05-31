@@ -1,6 +1,6 @@
 # SBB-Zugaenglichkeit-Haltestellen
 
-Server Client Projekt im Rahmen der Bachelor Thesis "SBB interaktive Visualisierung der Zugänglich-keit von Haltestellen" des Institutes Geomatik an der FHNW Muttenz.
+Server Client Projekt im Rahmen der Bachelor Thesis "SBB interaktive Visualisierung der Zugänglichkeit von Haltestellen" des Institutes Geomatik an der FHNW Muttenz.
 
 **Frontend:** Angular, MapLibre und SBB Angular
 
