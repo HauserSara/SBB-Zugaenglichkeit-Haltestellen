@@ -472,9 +472,6 @@ async def create_route_ojp(coordinates: Coordinates):
     first_coordinate = first_leg_info['coordinates'][0]
     m = folium.Map(location=[float(first_coordinate[0]), float(first_coordinate[1])], zoom_start=14)
 
-    print("meintest")
-    print(result_leg_ids)
-
     # Iterate over the trip results
     for result_id, result_legs in result_leg_ids.items():
         # Get a new color for the current trip result

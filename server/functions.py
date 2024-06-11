@@ -5,6 +5,7 @@ import json
 from fastapi import HTTPException
 import statistics
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 # ======================================= Function API request stop places ======================================= # 
 # get stop places within a certain distance of the given coordinates
@@ -85,16 +86,21 @@ def get_routes_ojp(lon1, lat1, lon2, lat2):
         "Authorization": "Bearer eyJvcmciOiI2NDA2NTFhNTIyZmEwNTAwMDEyOWJiZTEiLCJpZCI6Ijc4MDlhMzhlOWUyMzQzODM4YmJjNWIwNjQxN2Y0NTk3IiwiaCI6Im11cm11cjEyOCJ9"
     }
 
+    # Get the current date and time
+    current_datetime = datetime.now()
+    # Format it as a string
+    current_datetime_str = current_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
     # set the body of the request
     body = f"""
     <?xml version="1.0" encoding="utf-8"?>
     <OJP xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.siri.org.uk/siri" version="1.0" xmlns:ojp="http://www.vdv.de/ojp" xsi:schemaLocation="http://www.siri.org.uk/siri ../ojp-xsd-v1.0/OJP.xsd">
         <OJPRequest>
             <ServiceRequest>
-                <RequestTimestamp>2024-05-20T12:00:10.154Z</RequestTimestamp>
+                <RequestTimestamp>{current_datetime_str}</RequestTimestamp>
                 <RequestorRef>API-Explorer</RequestorRef>
                 <ojp:OJPTripRequest>
-                    <RequestTimestamp>2024-05-20T12:00:10.154Z</RequestTimestamp>
+                    <RequestTimestamp>{current_datetime_str}</RequestTimestamp>
                     <ojp:Origin>
                         <ojp:PlaceRef>
                             <ojp:GeoPosition>
@@ -105,7 +111,7 @@ def get_routes_ojp(lon1, lat1, lon2, lat2):
                                 <ojp:Text>{lon1}, {lat1}</ojp:Text>
                             </ojp:LocationName>
                         </ojp:PlaceRef>
-                        <ojp:DepArrTime>2024-05-20T11:57:19</ojp:DepArrTime>
+                        <ojp:DepArrTime>{current_datetime_str}</ojp:DepArrTime>
                         <ojp:IndividualTransportOptions>
                             <ojp:Mode>walk</ojp:Mode>
                             <ojp:MaxDistance>1000</ojp:MaxDistance>
@@ -271,8 +277,10 @@ def calculate_resistance(profile):
         # calculate the slope factor between two coordinates        
         if slope > 6 or slope < -6:
             slope_factor = dist_difference * slope * 5.0
-        elif 1 < slope <= 6 or -6 <= slope < -1:
+        elif 1 < slope <= 6:
             slope_factor = dist_difference * slope * (slope/10 + 1)
+        elif -6 <= slope < -1:
+            slope_factor = dist_difference * slope * (slope/10 - 1)
         elif -1 <= slope <= 1:
             slope_factor = dist_difference * slope
 
